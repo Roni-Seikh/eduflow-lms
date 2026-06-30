@@ -99,7 +99,7 @@ def _generate_qr_code(cert_id, size=80):
     """Generate a QR code image for certificate verification."""
     import qrcode
     import io as _io
-    verify_url = f"https://eduflow-lms.onrender.com/verify/{cert_id}"
+    verify_url = f"https://eduflow-lms-7ew2.onrender.com/verify/{cert_id}"
     qr = qrcode.QRCode(version=1, box_size=3, border=2)
     qr.add_data(verify_url)
     qr.make(fit=True)
