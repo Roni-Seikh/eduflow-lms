@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ exam.title }} — EduFlow LMS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','ui-sans-serif']}}}}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body{font-family:'Plus Jakarta Sans',sans-serif;user-select:none;-webkit-user-select:none;}
+    .option-card{transition:all .15s ease;cursor:pointer;}
+    .option-card:hover{transform:translateX(4px);}
+    .option-card.selected{border-color:#10b981;background:linear-gradient(90deg,rgba(16,185,129,.08),transparent);}
+    .dark .option-card.selected{background:linear-gradient(90deg,rgba(16,185,129,.12),transparent);}
+    #timer-ring{transition:stroke-dashoffset 1s linear;}
+    @keyframes pulse-warn{0%,100%{opacity:1}50%{opacity:.5}}
+    .timer-warning{animation:pulse-warn .8s ease infinite;}
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen" id="exam-body">
+
+<!-- Anti-cheat overlay -->
+<div id="cheat-overlay" class="hidden fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center text-white text-center p-6">
+  <div>
+    <i class="fas fa-triangle-exclamation text-6xl text-amber-400 mb-4 block"></i>
+    <h2 class="text-2xl font-bold mb-2">Warning: Suspicious Activity Detected</h2>
+    <p class="text-slate-300 mb-6" id="cheat-reason">You switched tabs or left the exam window.</p>
+    <button onclick="returnToExam()" class="px-8 py-3 bg-amber-500 hover:bg-amber-600 rounded-xl font-semibold transition-colors">Return to Exam</button>
+    <p class="text-slate-500 text-sm mt-3">This incident has been logged. <span id="warnings-left">2</span> more warnings before auto-submit.</p>
+  </div>
+</div>
+
+<!-- Top Bar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
+  <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-file-pen text-white text-sm"></i>
+      </div>
+      <div class="min-w-0">
+        <h1 class="font-bold text-slate-700 dark:text-slate-200 text-sm truncate">{{ exam.title }}</h1>
+        <p class="text-xs text-slate-400">{{ questions|length }} Questions · {{ exam.passing_score }}% to pass</p>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="flex items-center gap-3">
+      <div class="relative w-12 h-12">
+        <svg class="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="20" fill="none" stroke="#e2e8f0" stroke-width="4"/>
+          <circle id="timer-ring" cx="24" cy="24" r="20" fill="none" stroke="#f59e0b" stroke-width="4"
+            stroke-dasharray="125.7" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <i class="fas fa-clock text-amber-500 text-xs"></i>
+        </div>
+      </div>
+      <div>
+        <p id="timer-display" class="text-xl font-extrabold text-slate-700 dark:text-slate-200 font-mono tabular-nums">
+          {{ '%02d:%02d'|format(exam.duration_minutes, 0) }}
+        </p>
+        <p class="text-xs text-slate-400">remaining</p>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="hidden sm:block text-right">
+      <p class="text-sm font-bold text-slate-700 dark:text-slate-200"><span id="answered-count">0</span>/{{ questions|length }}</p>
+      <p class="text-xs text-slate-400">answered</p>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="h-1 bg-slate-100 dark:bg-slate-700">
+    <div id="progress-bar" class="h-full bg-gradient-to-r from-amber-400 to-emerald-500 transition-all" style="width:0%"></div>
+  </div>
+</header>
+
+<!-- Exam Content -->
+<div class="pt-20 pb-32 max-w-3xl mx-auto px-4">
+  <form id="exam-form" method="POST" action="{{ url_for('student.submit_exam', exam_id=exam.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+    <input type="hidden" name="time_taken" id="time-taken" value="0">
+    <input type="hidden" name="auto_submit" id="auto-submit" value="false">
+
+    <div class="space-y-6 mt-4">
+      {% for q in questions %}
+      <div class="question-item bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6" data-qid="{{ q.id }}">
+        <div class="flex items-start gap-4 mb-5">
+          <span class="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">{{ loop.index }}</span>
+          <p class="text-slate-700 dark:text-slate-200 font-medium leading-relaxed">{{ q.question }}</p>
+        </div>
+
+        <div class="space-y-2.5 pl-12">
+          {% for opt_key, opt_val in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+          <label class="option-card flex items-center gap-4 p-3.5 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer" onclick="selectOption(this, '{{ q.id }}')">
+            <input type="radio" name="answer_{{ q.id }}" value="{{ opt_key }}" class="hidden" onchange="updateProgress()">
+            <span class="w-7 h-7 rounded-full border-2 border-slate-300 dark:border-slate-500 flex items-center justify-center text-xs font-bold text-slate-400 flex-shrink-0 transition-all">{{ opt_key }}</span>
+            <span class="text-sm text-slate-600 dark:text-slate-300">{{ opt_val }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </form>
+</div>
+
+<!-- Submit Footer -->
+<div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 z-40">
+  <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
+    <p class="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">
+      <i class="fas fa-shield-halved text-emerald-500 mr-1"></i>
+      All answers are auto-saved. Tab switches are monitored.
+    </p>
+    <button onclick="submitExam(false)" class="ml-auto px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg hover:opacity-90 transition-all">
+      <i class="fas fa-paper-plane mr-2"></i>Submit Exam
+    </button>
+  </div>
+</div>
+
+<script>
+// ─── Timer ─────────────────────────────────────────────────
+const totalSeconds = {{ exam.duration_minutes }} * 60;
+let remaining = totalSeconds;
+let startTime = Date.now();
+const timerDisplay = document.getElementById('timer-display');
+const timerRing = document.getElementById('timer-ring');
+const circumference = 125.7;
+
+function updateTimer() {
+  remaining--;
+  document.getElementById('time-taken').value = totalSeconds - remaining;
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  timerDisplay.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  // Ring progress
+  const pct = remaining / totalSeconds;
+  timerRing.style.strokeDashoffset = circumference * (1 - pct);
+
+  // Color warnings
+  if (remaining <= 60) {
+    timerRing.style.stroke = '#ef4444';
+    timerDisplay.classList.add('timer-warning', 'text-red-500');
+    timerDisplay.classList.remove('text-slate-700');
+  } else if (remaining <= 300) {
+    timerRing.style.stroke = '#ef4444';
+  }
+
+  if (remaining <= 0) {
+    clearInterval(timerInterval);
+    submitExam(true);
+  }
+}
+const timerInterval = setInterval(updateTimer, 1000);
+
+// ─── Progress ──────────────────────────────────────────────
+function updateProgress() {
+  const total = document.querySelectorAll('.question-item').length;
+  const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+  document.getElementById('answered-count').textContent = answered;
+  document.getElementById('progress-bar').style.width = (answered / total * 100) + '%';
+}
+
+// ─── Option selection ──────────────────────────────────────
+function selectOption(label, qid) {
+  const question = label.closest('.question-item');
+  question.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+  label.classList.add('selected');
+  label.querySelector('input[type="radio"]').checked = true;
+  updateProgress();
+}
+
+// ─── Submit ────────────────────────────────────────────────
+function submitExam(auto=false) {
+  if (!auto) {
+    const total = {{ questions|length }};
+    const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+    if (answered < total) {
+      if (!confirm(`You have answered ${answered} of ${total} questions. Submit anyway?`)) return;
+    }
+  }
+  clearInterval(timerInterval);
+  document.getElementById('auto-submit').value = auto ? 'true' : 'false';
+  document.getElementById('exam-form').submit();
+}
+
+// ─── Anti-cheat ─────────────────────────────────────────────
+let warnings = 0;
+const maxWarnings = 3;
+
+function logCheat(action, description) {
+  fetch('{{ url_for("student.log_cheat") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ exam_id: {{ exam.id }}, action, description })
+  });
+}
+
+function showCheatWarning(reason) {
+  warnings++;
+  document.getElementById('cheat-reason').textContent = reason;
+  document.getElementById('warnings-left').textContent = Math.max(0, maxWarnings - warnings);
+  document.getElementById('cheat-overlay').classList.remove('hidden');
+  logCheat(reason.replace(/ /g,'_').toLowerCase(), reason);
+  if (warnings >= maxWarnings) {
+    setTimeout(() => submitExam(true), 3000);
+  }
+}
+
+function returnToExam() {
+  document.getElementById('cheat-overlay').classList.add('hidden');
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+}
+
+// Tab visibility
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) showCheatWarning('You switched tabs or minimized the window.');
+});
+
+// Right click disabled
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// Copy/paste disabled
+document.addEventListener('copy', e => { e.preventDefault(); logCheat('copy_attempt','Attempted to copy'); });
+document.addEventListener('paste', e => { e.preventDefault(); });
+document.addEventListener('cut', e => { e.preventDefault(); });
+
+// Keyboard shortcuts disabled
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && ['c','v','x','a','p','s'].includes(e.key.toLowerCase())) {
+    e.preventDefault();
+    logCheat('keyboard_shortcut', `Pressed Ctrl+${e.key}`);
+  }
+  if (e.key === 'F12') { e.preventDefault(); }
+  if (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) { e.preventDefault(); }
+});
+
+// Request fullscreen on start
+if (document.documentElement.requestFullscreen) {
+  document.documentElement.requestFullscreen().catch(()=>{});
+}
+
+// Detect fullscreen exit
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) showCheatWarning('You exited fullscreen mode. Please stay in fullscreen during the exam.');
+});
+
+// Apply saved theme
+(function(){const t=localStorage.getItem('theme')||'light';document.documentElement.classList.toggle('dark',t==='dark');})();
+
+// Enumerate filter for Jinja
+// (handled server-side via Jinja2 loop.index0)
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+{% extends "auth/base_login.html" %}
+{% block title %}Student Login{% endblock %}
+{% block extra_style %}<style>:root{--accent:#10b981;--accent-from:#10b981;--accent-to:#059669}</style>{% endblock %}
+{% block panel_icon %}fas fa-user-graduate{% endblock %}
+{% block panel_title %}Student Portal{% endblock %}
+{% block panel_desc %}Access your courses, live classes, exams and certificates in one place.{% endblock %}
+{% block logo_class %}bg-emerald-500{% endblock %}
+{% block logo_icon %}fas fa-user-graduate{% endblock %}
+{% block form_title %}Student Login{% endblock %}
+{% block form_subtitle %}Login with your Student ID or email address{% endblock %}
+{% block btn_class %}bg-emerald-500 hover:bg-emerald-600{% endblock %}
+
+{% block panel_stats %}
+<div class="bg-white/10 rounded-xl p-4 backdrop-blur"><div class="text-2xl font-bold">📚</div><div class="text-xs text-white/70 mt-1">Courses</div></div>
+<div class="bg-white/10 rounded-xl p-4 backdrop-blur"><div class="text-2xl font-bold">🎓</div><div class="text-xs text-white/70 mt-1">Certificates</div></div>
+<div class="bg-white/10 rounded-xl p-4 backdrop-blur"><div class="text-2xl font-bold">📊</div><div class="text-xs text-white/70 mt-1">Analytics</div></div>
+{% endblock %}
+
+{% block form_fields %}
+<div>
+  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Student ID or Email <span class="text-red-500">*</span></label>
+  <div class="relative">
+    <i class="fas fa-id-card absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+    <input type="text" name="identifier" required placeholder="LMS/S/26/01 or email@domain.com" autocomplete="off"
+      class="input-field w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm placeholder-slate-400 font-mono">
+  </div>
+</div>
+<div>
+  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Password <span class="text-red-500">*</span></label>
+  <div class="relative">
+    <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+    <input type="password" name="password" id="pwd" required placeholder="Enter your password" autocomplete="new-password"
+      class="input-field w-full pl-10 pr-12 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm placeholder-slate-400">
+    <button type="button" onclick="togglePwd()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"><i id="pwd-icon" class="fas fa-eye text-sm"></i></button>
+  </div>
+</div>
+{% endblock %}
+{% block submit_text %}Sign In to Student Portal{% endblock %}
+{% block form_footer %}
+<p class="text-slate-500 dark:text-slate-400">
+  <a href="{{ url_for('auth.forgot_password') }}" class="text-emerald-500 hover:underline font-medium">Forgot password?</a>
+</p>
+<p class="text-slate-500 dark:text-slate-400">
+  New student? <a href="{{ url_for('auth.student_register') }}" class="text-emerald-500 hover:underline font-semibold">Register here →</a>
+</p>
+<p class="text-slate-500 dark:text-slate-400">
+  <a href="{{ url_for('auth.select_login') }}" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">← Back to login selection</a>
+</p>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function togglePwd() {
+  const p = document.getElementById('pwd');
+  const i = document.getElementById('pwd-icon');
+  p.type = p.type === 'password' ? 'text' : 'password';
+  i.className = p.type === 'password' ? 'fas fa-eye text-sm' : 'fas fa-eye-slash text-sm';
+}
+</script>
+{% endblock %}

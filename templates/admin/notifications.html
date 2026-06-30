@@ -1,0 +1,135 @@
+{% extends "admin/base.html" %}
+{% block title %}Notifications — EduFlow LMS{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- SEND FORM -->
+    <div class="lg:col-span-1">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden sticky top-24">
+        <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+          <div class="w-9 h-9 bg-gradient-to-br from-red-400 to-rose-600 rounded-xl flex items-center justify-center">
+            <i class="fas fa-paper-plane text-white text-sm"></i>
+          </div>
+          <h3 class="font-bold text-slate-700 dark:text-slate-200">Send Notification</h3>
+        </div>
+        <form method="POST" class="p-5 space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Send To <span class="text-red-500">*</span></label>
+            <select name="recipient_type" id="recipient_type" onchange="updateRecipientUI()"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+              <option value="all">Everyone (Admin + Faculty + Students)</option>
+              <option value="students">All Students</option>
+              <option value="faculty">All Faculty</option>
+              <option value="individual">Individual User (by ID)</option>
+            </select>
+          </div>
+          <div id="individual-fields" class="hidden space-y-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">User Type</label>
+              <select name="individual_role" id="individual_role" onchange="updateIdPlaceholder()"
+                class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+                <option value="student">Student</option>
+                <option value="faculty">Faculty</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">User ID</label>
+              <input type="text" name="individual_id" id="individual_id" placeholder="e.g. LMS/S/26/01"
+                class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500/30">
+            </div>
+            <div id="student-list" class="max-h-32 overflow-y-auto space-y-1">
+              {% for s in all_students %}
+              <button type="button" onclick="pickUser('{{ s.student_id }}','student')"
+                class="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center text-[9px] font-bold flex-shrink-0">S</span>
+                <span class="font-mono text-[10px]">{{ s.student_id }}</span>
+                <span class="text-slate-400 truncate text-[10px]">{{ s.name }}</span>
+              </button>
+              {% endfor %}
+            </div>
+            <div id="faculty-list" class="hidden max-h-32 overflow-y-auto space-y-1">
+              {% for f in all_faculty %}
+              <button type="button" onclick="pickUser('{{ f.faculty_id }}','faculty')"
+                class="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-violet-100 text-violet-500 flex items-center justify-center text-[9px] font-bold flex-shrink-0">F</span>
+                <span class="font-mono text-[10px]">{{ f.faculty_id }}</span>
+                <span class="text-slate-400 truncate text-[10px]">{{ f.name }}</span>
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Title <span class="text-red-500">*</span></label>
+            <input type="text" name="title" required placeholder="Notification title"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Message <span class="text-red-500">*</span></label>
+            <textarea name="message" required rows="4" placeholder="Write your message…"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"></textarea>
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+            <i class="fas fa-paper-plane mr-1.5"></i>Send Notification
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION LOG -->
+    <div class="lg:col-span-2 space-y-3">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Notification Log ({{ notifications|length }})</h3>
+      {% for n in notifications %}
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100 dark:bg-slate-700">
+            <i class="fas fa-bell text-sm text-slate-400"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ n.title }}</p>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ n.created_at.strftime('%d %b, %H:%M') }}</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ n.message }}</p>
+            <div class="flex items-center gap-2 mt-2 flex-wrap">
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 dark:bg-slate-700 text-slate-500">
+                To: {{ n.recipient_type }}{% if n.recipient_role %} / {{ n.recipient_role }}{% endif %}{% if n.recipient_id %} #{{ n.recipient_id }}{% endif %}
+              </span>
+              <span class="text-[10px] text-slate-400">From: {{ n.sender_role }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-14 text-center">
+        <i class="fas fa-bell text-slate-200 dark:text-slate-600 text-3xl mb-3 block"></i>
+        <p class="text-slate-400">No notifications yet.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateRecipientUI() {
+  const val = document.getElementById('recipient_type').value;
+  document.getElementById('individual-fields').classList.toggle('hidden', val !== 'individual');
+}
+function updateIdPlaceholder() {
+  const role = document.getElementById('individual_role').value;
+  document.getElementById('individual_id').placeholder = role === 'student' ? 'e.g. LMS/S/26/01' : 'e.g. LMS/F/26/01';
+  document.getElementById('student-list').classList.toggle('hidden', role !== 'student');
+  document.getElementById('faculty-list').classList.toggle('hidden', role !== 'faculty');
+}
+function pickUser(id, role) {
+  document.getElementById('individual_role').value = role;
+  document.getElementById('individual_id').value = id;
+  updateIdPlaceholder();
+}
+</script>
+{% endblock %}

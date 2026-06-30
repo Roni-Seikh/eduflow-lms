@@ -1,0 +1,125 @@
+{% extends "faculty/base.html" %}
+{% block title %}Exam Results — EduFlow LMS{% endblock %}
+{% block page_title %}Exam Results{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <nav class="flex items-center gap-2 text-sm text-slate-400">
+    <a href="{{ url_for('faculty.exams') }}" class="hover:text-violet-500">Exams</a>
+    <i class="fas fa-chevron-right text-xs"></i>
+    <span class="text-slate-600 dark:text-slate-300">{{ exam.title }} — Results</span>
+  </nav>
+
+  <!-- Stats -->
+  {% if results %}
+  {% set passed = results|selectattr('passed','eq',true)|list|length %}
+  {% set avg = (results|sum(attribute='percentage') / results|length)|round(1) %}
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <p class="text-2xl font-extrabold text-slate-700 dark:text-white">{{ results|length }}</p>
+      <p class="text-xs text-slate-400 mt-1">Attempted</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <p class="text-2xl font-extrabold text-emerald-500">{{ passed }}</p>
+      <p class="text-xs text-slate-400 mt-1">Passed</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <p class="text-2xl font-extrabold text-red-500">{{ results|length - passed }}</p>
+      <p class="text-xs text-slate-400 mt-1">Failed</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <p class="text-2xl font-extrabold text-primary-500">{{ avg }}%</p>
+      <p class="text-xs text-slate-400 mt-1">Avg Score</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Results Table -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Student Results — {{ exam.title }}</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-700/50">
+          <tr>
+            <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Student</th>
+            <th class="text-center px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Score</th>
+            <th class="text-center px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Percentage</th>
+            <th class="text-center px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Submitted</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          {% for result in results %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                  {{ result.student.name[0].upper() if result.student else '?' }}
+                </div>
+                <div>
+                  <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">
+                    {{ result.student.name if result.student else 'Student #' ~ result.student_id }}
+                  </p>
+                  <p class="text-xs text-slate-400 font-mono">
+                    {{ result.student.student_id if result.student else '—' }}
+                  </p>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-200">{{ result.score }}/{{ result.total_marks }}</td>
+            <td class="px-4 py-3.5 text-center">
+              <span class="font-bold {% if result.percentage >= 75 %}text-emerald-500{% elif result.percentage >= 50 %}text-amber-500{% else %}text-red-500{% endif %}">
+                {{ result.percentage }}%
+              </span>
+            </td>
+            <td class="px-4 py-3.5 text-center">
+              {% if result.passed %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
+                <i class="fas fa-check text-[10px]"></i>Passed
+              </span>
+              {% else %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400">
+                <i class="fas fa-times text-[10px]"></i>Failed
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3.5 hidden md:table-cell text-slate-400 text-xs">{{ result.submitted_at.strftime('%d %b %Y, %H:%M') }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">No students have attempted this exam yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cheating Logs -->
+  {% if cheating_logs %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-amber-200 dark:border-amber-700 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 flex items-center gap-2">
+      <i class="fas fa-triangle-exclamation text-amber-500"></i>
+      <h3 class="font-bold text-amber-700 dark:text-amber-300">Suspicious Activity Logs</h3>
+      <span class="ml-auto text-xs text-amber-600 dark:text-amber-400">{{ cheating_logs|length }} incidents</span>
+    </div>
+    <div class="divide-y divide-slate-100 dark:divide-slate-700">
+      {% for log in cheating_logs %}
+      <div class="flex items-center gap-4 px-5 py-3">
+        <div class="w-8 h-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-exclamation text-amber-500 text-xs"></i>
+        </div>
+        <div class="flex-1">
+          <p class="text-xs font-semibold text-slate-700 dark:text-slate-200">
+            {{ log.student.name if log.student else 'Student #' ~ log.student_id }}
+          </p>
+          <p class="text-xs text-slate-400">{{ log.action.replace('_',' ').title() }} — {{ log.description or '' }}</p>
+        </div>
+        <span class="text-xs text-slate-400">{{ log.logged_at.strftime('%H:%M') }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

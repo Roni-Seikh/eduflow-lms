@@ -1,0 +1,48 @@
+{% extends "auth/base_login.html" %}
+{% block title %}Faculty Login{% endblock %}
+{% block extra_style %}<style>:root{--accent:#7c3aed;--accent-from:#7c3aed;--accent-to:#6d28d9}</style>{% endblock %}
+{% block panel_icon %}fas fa-chalkboard-teacher{% endblock %}
+{% block panel_title %}Faculty Portal{% endblock %}
+{% block panel_desc %}Empower your teaching with live classes, exams, and student management tools.{% endblock %}
+{% block logo_class %}bg-violet-600{% endblock %}
+{% block logo_icon %}fas fa-chalkboard-teacher{% endblock %}
+{% block form_title %}Faculty Login{% endblock %}
+{% block form_subtitle %}Login with your Faculty ID or email address{% endblock %}
+{% block btn_class %}bg-violet-600 hover:bg-violet-700{% endblock %}
+
+{% block panel_stats %}
+<div class="bg-white/10 rounded-xl p-4 backdrop-blur"><div class="text-2xl font-bold">∞</div><div class="text-xs text-white/70 mt-1">Courses</div></div>
+<div class="bg-white/10 rounded-xl p-4 backdrop-blur"><div class="text-2xl font-bold">MCQ</div><div class="text-xs text-white/70 mt-1">Exams</div></div>
+<div class="bg-white/10 rounded-xl p-4 backdrop-blur"><div class="text-2xl font-bold">Live</div><div class="text-xs text-white/70 mt-1">Classes</div></div>
+{% endblock %}
+
+{% block form_fields %}
+<div>
+  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Faculty ID or Email <span class="text-red-500">*</span></label>
+  <div class="relative">
+    <i class="fas fa-id-badge absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+    <input type="text" name="identifier" required placeholder="LMS/F/26/01 or email@domain.com" autocomplete="off"
+      class="input-field w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm placeholder-slate-400 font-mono">
+  </div>
+</div>
+<div>
+  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Password <span class="text-red-500">*</span></label>
+  <div class="relative">
+    <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+    <input type="password" name="password" id="pwd" required placeholder="Enter your password" autocomplete="new-password"
+      class="input-field w-full pl-10 pr-12 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm placeholder-slate-400">
+    <button type="button" onclick="togglePwd()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><i id="pwd-icon" class="fas fa-eye text-sm"></i></button>
+  </div>
+</div>
+{% endblock %}
+{% block submit_text %}Sign In to Faculty Portal{% endblock %}
+{% block extra_scripts %}
+<script>
+function togglePwd() {
+  const p = document.getElementById('pwd');
+  const i = document.getElementById('pwd-icon');
+  p.type = p.type === 'password' ? 'text' : 'password';
+  i.className = p.type === 'password' ? 'fas fa-eye text-sm' : 'fas fa-eye-slash text-sm';
+}
+</script>
+{% endblock %}

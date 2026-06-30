@@ -1,0 +1,161 @@
+{% extends "student/base.html" %}
+{% block title %}Notifications — EduFlow LMS{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- SEND FORM -->
+    <div class="lg:col-span-1">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden sticky top-24">
+        <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+          <div class="w-9 h-9 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-xl flex items-center justify-center">
+            <i class="fas fa-paper-plane text-white text-sm"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-700 dark:text-slate-200">Send Message</h3>
+            <p class="text-[10px] text-slate-400">Query to admin or faculty only</p>
+          </div>
+        </div>
+        <form method="POST" class="p-5 space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Send To <span class="text-red-500">*</span></label>
+            <select name="recipient_type" id="recipient_type" onchange="updateUI()"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+              <option value="admin">Admin (Query / Complaint)</option>
+              <option value="individual_faculty">Specific Faculty (by ID)</option>
+              <option value="course_faculty">My Course Faculty</option>
+            </select>
+          </div>
+
+          <!-- Faculty ID field -->
+          <div id="faculty-field" class="hidden">
+            <label class="block text-xs font-medium text-slate-500 mb-1">Faculty ID</label>
+            <input type="text" name="individual_id" placeholder="e.g. LMS/F/26/01"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+          </div>
+
+          <!-- Info for course_faculty -->
+          <div id="course-faculty-info" class="hidden bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+            <i class="fas fa-circle-info mr-1"></i>
+            Message will be sent to faculty of all your enrolled courses.
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Title <span class="text-red-500">*</span></label>
+            <input type="text" name="title" required placeholder="e.g. Question about assignment"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Message <span class="text-red-500">*</span></label>
+            <textarea name="message" required rows="4" placeholder="Write your query…"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none"></textarea>
+          </div>
+
+          <!-- Restriction notice -->
+          <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-3 py-2 text-xs text-amber-700 dark:text-amber-300 flex gap-2">
+            <i class="fas fa-shield-halved mt-0.5 flex-shrink-0"></i>
+            <span>You can only message Admin or Faculty. You cannot send notifications to other students.</span>
+          </div>
+
+          <button type="submit"
+            class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+            <i class="fas fa-paper-plane mr-1.5"></i>Send Message
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- INBOX + SENT -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Received notifications -->
+      <div>
+        <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-3">
+          Inbox
+          <span class="text-xs font-normal text-slate-400">({{ notifications|length }} messages)</span>
+        </h3>
+        <div class="space-y-3">
+          {% for n in notifications %}
+          <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+                {% if n.sender_role == 'admin' %}bg-red-50 dark:bg-red-900/20
+                {% else %}bg-violet-50 dark:bg-violet-900/20{% endif %}">
+                <i class="fas fa-{{ 'shield-halved' if n.sender_role == 'admin' else 'chalkboard-teacher' }} text-sm
+                  {% if n.sender_role == 'admin' %}text-red-500{% else %}text-violet-500{% endif %}"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ n.title }}</p>
+                  <span class="text-xs text-slate-400 flex-shrink-0">{{ n.created_at.strftime('%d %b, %H:%M') }}</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{{ n.message }}</p>
+                <span class="mt-1.5 inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold
+                  {% if n.sender_role == 'admin' %}bg-red-50 text-red-500 dark:bg-red-900/20
+                  {% else %}bg-violet-50 text-violet-500 dark:bg-violet-900/20{% endif %}">
+                  From: {{ n.sender_role | capitalize }}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 py-12 text-center">
+            <i class="fas fa-bell text-slate-200 dark:text-slate-600 text-3xl mb-3 block"></i>
+            <p class="text-slate-400 font-medium">No notifications yet.</p>
+            <p class="text-slate-400 text-sm mt-1">Announcements from admin and faculty will appear here.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Sent messages -->
+      <div>
+        <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-3">
+          Sent Messages
+          <span class="text-xs font-normal text-slate-400">({{ sent_notifications|length }})</span>
+        </h3>
+        <div class="space-y-3">
+          {% for n in sent_notifications %}
+          <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm opacity-75">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-paper-plane text-emerald-500 text-xs"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ n.title }}</p>
+                  <span class="text-xs text-slate-400 flex-shrink-0">{{ n.created_at.strftime('%d %b, %H:%M') }}</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ n.message }}</p>
+                <span class="mt-1.5 inline-block text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 font-medium">
+                  To: {{ n.recipient_role | capitalize if n.recipient_role else n.recipient_type }}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 py-8 text-center text-slate-400 text-sm">
+            You haven't sent any messages yet.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateUI() {
+  const val = document.getElementById('recipient_type').value;
+  document.getElementById('faculty-field').classList.toggle('hidden', val !== 'individual_faculty');
+  document.getElementById('course-faculty-info').classList.toggle('hidden', val !== 'course_faculty');
+}
+</script>
+{% endblock %}

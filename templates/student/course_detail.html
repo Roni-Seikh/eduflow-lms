@@ -1,0 +1,329 @@
+{% extends "student/base.html" %}
+{% block title %}{{ course.title }} — EduFlow LMS{% endblock %}
+{% block page_title %}Course Detail{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Course Hero -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="h-48 md:h-64 relative overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-600">
+      {% if course.thumbnail %}
+      <img src="{{ url_for('static', filename='uploads/thumbnails/'+course.thumbnail) }}" class="w-full h-full object-cover">
+      {% else %}
+      <div class="w-full h-full flex items-center justify-center">
+        <i class="fas fa-book-open text-7xl text-white/30"></i>
+      </div>
+      {% endif %}
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-6">
+        <div class="text-white">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold px-2 py-1 rounded-full
+              {% if course.level == 'Beginner' %}bg-emerald-500{% elif course.level == 'Intermediate' %}bg-amber-500{% else %}bg-red-500{% endif %}">
+              {{ course.level }}
+            </span>
+            {% if course.category %}<span class="text-xs px-2 py-1 bg-white/20 backdrop-blur rounded-full">{{ course.category }}</span>{% endif %}
+          </div>
+          <h1 class="text-2xl md:text-3xl font-extrabold mb-1">{{ course.title }}</h1>
+          <p class="text-white/80 text-sm flex items-center gap-2">
+            <i class="fas fa-user-tie"></i> {{ course.faculty.name }}
+            <span class="text-white/40">·</span>
+            <i class="fas fa-clock"></i> {{ course.duration or 'N/A' }}
+            <span class="text-white/40">·</span>
+            <i class="fas fa-users"></i> {{ course.enrollments.count() }} students
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="grid grid-cols-4 divide-x divide-slate-100 dark:divide-slate-700">
+      <div class="text-center py-4">
+        <p class="text-lg font-extrabold text-emerald-500" id="progress-pct">{{ enrollment.progress }}%</p>
+        <p class="text-xs text-slate-400">Progress</p>
+      </div>
+      <div class="text-center py-4">
+        <p class="text-lg font-extrabold text-blue-500">{{ attendance_pct }}%</p>
+        <p class="text-xs text-slate-400">Attendance</p>
+      </div>
+      <div class="text-center py-4">
+        <p class="text-lg font-extrabold text-primary-500">{{ lectures|length }}</p>
+        <p class="text-xs text-slate-400">Lectures</p>
+      </div>
+      <div class="text-center py-4">
+        <p class="text-lg font-extrabold text-amber-500">{{ exams|length }}</p>
+        <p class="text-xs text-slate-400">Exams</p>
+      </div>
+    </div>
+    <!-- Progress bar -->
+    <div class="px-6 pb-4">
+      <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+        <span>Course Progress</span>
+        <span id="progress-pct-bar">{{ enrollment.progress }}%</span>
+      </div>
+      <div class="h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+        <div id="progress-bar-fill" class="h-full rounded-full transition-all duration-500
+          {% if enrollment.progress == 100 %}bg-gradient-to-r from-emerald-400 to-emerald-500
+          {% elif enrollment.progress >= 50 %}bg-gradient-to-r from-blue-400 to-primary-500
+          {% else %}bg-gradient-to-r from-amber-400 to-amber-500{% endif %}"
+          style="width: {{ enrollment.progress }}%"></div>
+      </div>
+      {% if enrollment.is_completed %}
+      <p class="text-xs text-emerald-500 font-semibold mt-1.5"><i class="fas fa-check-circle mr-1"></i>Course Completed! Check your certificates.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if course.is_closed %}
+  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl px-5 py-4 flex items-center gap-3">
+    <i class="fas fa-lock text-amber-500 text-xl flex-shrink-0"></i>
+    <div>
+      <p class="font-semibold text-amber-700 dark:text-amber-300">This course has been closed by the faculty.</p>
+      <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">You can still complete all lectures and exams at your own pace to earn your certificate.</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if course.description %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+    <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-2">About This Course</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{{ course.description }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Live Classes -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+      <div class="w-9 h-9 bg-gradient-to-br from-red-400 to-rose-600 rounded-xl flex items-center justify-center">
+        <i class="fas fa-video text-white text-sm"></i>
+      </div>
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Live Classes</h3>
+      <span class="ml-auto text-xs text-slate-400">{{ live_classes|length }} scheduled</span>
+    </div>
+    {% if live_classes %}
+    <div class="divide-y divide-slate-100 dark:divide-slate-700">
+      {% for cls in live_classes %}
+      <div class="flex items-center gap-4 px-5 py-4">
+        <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-satellite-dish text-red-500"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate">{{ cls.title }}</p>
+          <p class="text-xs text-slate-400 mt-0.5">
+            <i class="fas fa-calendar mr-1"></i>{{ cls.scheduled_at.strftime('%d %b %Y, %I:%M %p') }}
+            · <i class="fas fa-clock mr-1"></i>{{ cls.duration_minutes }} min
+          </p>
+        </div>
+        {% if cls.meeting_link %}
+        <a href="{{ cls.meeting_link }}" target="_blank" rel="noopener"
+          class="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors whitespace-nowrap">
+          <i class="fas fa-external-link-alt mr-1"></i>Join
+        </a>
+        {% endif %}
+        {% if cls.recording_url %}
+        <a href="{{ cls.recording_url }}" target="_blank" rel="noopener"
+          class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-colors whitespace-nowrap">
+          <i class="fas fa-play mr-1"></i>Recording
+        </a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-10 text-center text-slate-400 text-sm">No live classes scheduled yet.</div>
+    {% endif %}
+  </div>
+
+  <!-- Recorded Lectures -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+      <div class="w-9 h-9 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center">
+        <i class="fas fa-film text-white text-sm"></i>
+      </div>
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Recorded Lectures</h3>
+      <span class="ml-auto text-xs text-slate-400">{{ lectures|length }} lectures</span>
+    </div>
+    {% if lectures %}
+    <div class="divide-y divide-slate-100 dark:divide-slate-700">
+      {% for lec in lectures %}
+      <div class="flex items-start gap-4 px-5 py-4" id="lec-row-{{ lec.id }}">
+        <!-- Completion indicator -->
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all
+          {% if lec.id in completed_lecture_ids %}bg-emerald-100 dark:bg-emerald-900/30{% else %}bg-violet-50 dark:bg-violet-900/20{% endif %}"
+          id="lec-icon-{{ lec.id }}">
+          <i class="fas fa-{% if lec.id in completed_lecture_ids %}check-circle{% else %}play-circle{% endif %}
+            {% if lec.id in completed_lecture_ids %}text-emerald-500{% else %}text-violet-500{% endif %}"
+            id="lec-icon-i-{{ lec.id }}"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ lec.title }}</p>
+          <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">{{ lec.description or '' }}</p>
+          {% if lec.duration %}<p class="text-xs text-slate-400 mt-0.5"><i class="fas fa-clock mr-1"></i>{{ lec.duration }}</p>{% endif %}
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+          {% if lec.video_url %}
+          <a href="{{ lec.video_url }}" target="_blank" class="px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 rounded-lg text-xs font-semibold hover:bg-violet-100 transition-colors">
+            <i class="fas fa-play mr-1"></i>Watch
+          </a>
+          {% endif %}
+          {% if lec.pdf_file %}
+          <a href="{{ url_for('static', filename='uploads/pdfs/'+lec.pdf_file) }}" download class="px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-semibold hover:bg-amber-100 transition-colors">
+            <i class="fas fa-file-pdf mr-1"></i>PDF
+          </a>
+          {% endif %}
+          <!-- Mark as watched toggle -->
+          <button onclick="toggleLecture({{ lec.id }}, {{ course.id }})"
+            id="lec-btn-{{ lec.id }}"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+            {% if lec.id in completed_lecture_ids %}
+              bg-emerald-500 text-white hover:bg-emerald-600
+            {% else %}
+              bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600
+            {% endif %}">
+            <i class="fas fa-{% if lec.id in completed_lecture_ids %}check{% else %}circle{% endif %} mr-1"
+              id="lec-btn-i-{{ lec.id }}"></i>
+            <span id="lec-btn-txt-{{ lec.id }}">{% if lec.id in completed_lecture_ids %}Watched{% else %}Mark Watched{% endif %}</span>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-10 text-center text-slate-400 text-sm">No lectures uploaded yet.</div>
+    {% endif %}
+  </div>
+
+  <!-- Exams -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+      <div class="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center">
+        <i class="fas fa-file-pen text-white text-sm"></i>
+      </div>
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Exams</h3>
+      <span class="ml-auto text-xs text-slate-400">{{ exams|length }} exams</span>
+    </div>
+    {% if exams %}
+    <div class="divide-y divide-slate-100 dark:divide-slate-700">
+      {% for exam in exams %}
+      {% set result = exam_status.get(exam.id) %}
+      <div class="flex items-center gap-4 px-5 py-4">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+          {% if result %}{% if result.passed %}bg-emerald-50 dark:bg-emerald-900/20{% else %}bg-red-50 dark:bg-red-900/20{% endif %}{% else %}bg-amber-50 dark:bg-amber-900/20{% endif %}">
+          <i class="fas fa-{% if result %}{% if result.passed %}trophy{% else %}times{% endif %}{% else %}file-pen{% endif %} text-sm
+            {% if result %}{% if result.passed %}text-emerald-500{% else %}text-red-500{% endif %}{% else %}text-amber-500{% endif %}"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ exam.title }}</p>
+          <p class="text-xs text-slate-400 mt-0.5">
+            <i class="fas fa-clock mr-1"></i>{{ exam.duration_minutes }} min
+            · <i class="fas fa-list-ol mr-1"></i>{{ exam.total_questions }} questions
+            · <i class="fas fa-target mr-1"></i>Pass at {{ exam.passing_score }}%
+          </p>
+        </div>
+        {% if result %}
+        <div class="text-right flex-shrink-0">
+          <p class="text-sm font-bold {% if result.passed %}text-emerald-500{% else %}text-red-500{% endif %}">{{ result.percentage }}%</p>
+          <a href="{{ url_for('student.exam_result', result_id=result.id) }}" class="text-xs text-primary-500 hover:underline">View result</a>
+        </div>
+        {% else %}
+        <a href="{{ url_for('student.start_exam', exam_id=exam.id) }}"
+          class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-xs font-semibold shadow hover:opacity-90 transition-all whitespace-nowrap">
+          <i class="fas fa-play mr-1"></i>Start Exam
+        </a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-10 text-center text-slate-400 text-sm">No exams created yet.</div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function toggleLecture(lectureId, courseId) {
+  const btn     = document.getElementById('lec-btn-' + lectureId);
+  const btnIcon = document.getElementById('lec-btn-i-' + lectureId);
+  const btnTxt  = document.getElementById('lec-btn-txt-' + lectureId);
+  const icon    = document.getElementById('lec-icon-' + lectureId);
+  const iconI   = document.getElementById('lec-icon-i-' + lectureId);
+
+  btn.disabled = true;
+  btn.classList.add('opacity-60');
+
+  try {
+    const res  = await fetch(`/student/lecture/${lectureId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+      }
+    });
+    const data = await res.json();
+
+    if (data.completed) {
+      // Mark green
+      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-500 text-white hover:bg-emerald-600';
+      btnIcon.className = 'fas fa-check mr-1';
+      btnTxt.textContent = 'Watched';
+      icon.className = 'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all bg-emerald-100 dark:bg-emerald-900/30';
+      iconI.className = 'fas fa-check-circle text-emerald-500';
+    } else {
+      // Un-mark
+      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600';
+      btnIcon.className = 'fas fa-circle mr-1';
+      btnTxt.textContent = 'Mark Watched';
+      icon.className = 'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all bg-violet-50 dark:bg-violet-900/20';
+      iconI.className = 'fas fa-play-circle text-violet-500';
+    }
+
+    // Update progress display
+    const pct = data.progress;
+    const pctEls = ['progress-pct', 'progress-pct-bar'];
+    pctEls.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = pct + '%';
+    });
+
+    const bar = document.getElementById('progress-bar-fill');
+    if (bar) {
+      bar.style.width = pct + '%';
+      // Update colour
+      bar.className = 'h-full rounded-full transition-all duration-500 ' + (
+        pct === 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' :
+        pct >= 50  ? 'bg-gradient-to-r from-blue-400 to-primary-500' :
+                     'bg-gradient-to-r from-amber-400 to-amber-500'
+      );
+    }
+
+    if (pct >= 100) {
+      showToast('🎉 Course completed! Your certificate is ready.', 'success');
+    } else {
+      showToast(data.completed ? '✅ Lecture marked as watched!' : 'Lecture unmarked.', data.completed ? 'success' : 'info');
+    }
+
+  } catch(err) {
+    showToast('Something went wrong. Please try again.', 'error');
+  }
+
+  btn.disabled = false;
+  btn.classList.remove('opacity-60');
+}
+
+function showToast(msg, type) {
+  const colors = {
+    success: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300',
+    error:   'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300',
+    info:    'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
+  };
+  const toast = document.createElement('div');
+  toast.className = `fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${colors[type] || colors.info}`;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+</script>
+{% endblock %}

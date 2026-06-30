@@ -1,0 +1,95 @@
+{% extends "student/base.html" %}
+{% block title %}My Profile — EduFlow LMS{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5">
+
+  <!-- Profile Card -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <!-- Header banner -->
+    <div class="h-28 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500"></div>
+    <div class="px-6 pb-6">
+      <!-- Avatar -->
+      <div class="-mt-12 mb-4 flex items-end justify-between">
+        <div class="w-24 h-24 rounded-2xl border-4 border-white dark:border-slate-800 overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg">
+          {% if current_user.profile_image %}
+          <img src="{{ url_for('static', filename='uploads/profiles/'+current_user.profile_image) }}" class="w-full h-full object-cover">
+          {% else %}
+          <span class="text-3xl font-extrabold text-white">{{ current_user.name[0].upper() }}</span>
+          {% endif %}
+        </div>
+        <div class="mb-1">
+          <code class="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full font-mono font-semibold border border-emerald-200 dark:border-emerald-700">
+            {{ current_user.student_id }}
+          </code>
+        </div>
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-800 dark:text-white">{{ current_user.name }}</h2>
+      <p class="text-slate-400 text-sm mt-0.5">{{ current_user.email }}</p>
+      <p class="text-xs text-slate-400 mt-1">
+        <i class="fas fa-calendar mr-1"></i>Member since {{ current_user.created_at.strftime('%B %Y') }}
+        {% if current_user.last_login %}
+        · <i class="fas fa-clock mr-1"></i>Last login {{ current_user.last_login.strftime('%d %b %Y') }}
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Update Profile</h3>
+      <p class="text-xs text-slate-400 mt-0.5">You can update your phone, address and profile photo.</p>
+    </div>
+    <form method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Profile Photo</label>
+        <input type="file" name="profile_image" accept="image/*"
+          class="text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100 dark:file:bg-emerald-900/20 dark:file:text-emerald-400 cursor-pointer">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
+        <input type="text" value="{{ current_user.name }}" disabled
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 text-slate-400 text-sm cursor-not-allowed">
+        <p class="text-xs text-slate-400 mt-1">Contact admin to change your name.</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Phone Number</label>
+        <input type="tel" name="phone" value="{{ current_user.phone or '' }}" placeholder="+91 00000 00000"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Address</label>
+        <textarea name="address" rows="3" placeholder="Your address"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none">{{ current_user.address or '' }}</textarea>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+          <i class="fas fa-floppy-disk mr-1.5"></i>Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Forgot Password Link -->
+  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-5 flex items-center gap-4">
+    <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-key text-amber-500"></i>
+    </div>
+    <div class="flex-1">
+      <p class="font-semibold text-amber-700 dark:text-amber-300 text-sm">Need to change your password?</p>
+      <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Submit a password reset request to the admin.</p>
+    </div>
+    <a href="{{ url_for('auth.forgot_password') }}" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold transition-colors whitespace-nowrap">
+      Request Reset
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "faculty/base.html" %}
+{% block title %}Live Classes — EduFlow LMS{% endblock %}
+{% block page_title %}Live Classes{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 dark:text-white">Live Classes</h2>
+      <p class="text-sm text-slate-400 mt-0.5">{{ classes|length }} scheduled class{{ 'es' if classes|length != 1 }}</p>
+    </div>
+    <button onclick="document.getElementById('add-class-modal').classList.remove('hidden')"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl font-semibold text-sm shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+      <i class="fas fa-plus"></i> Schedule Class
+    </button>
+  </div>
+
+  <!-- Classes List -->
+  {% if classes %}
+  <div class="space-y-3">
+    {% for cls in classes %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+      <div class="flex flex-col md:flex-row md:items-center gap-4">
+        <div class="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center
+          {% if cls.scheduled_at > now %}bg-red-50 dark:bg-red-900/20{% else %}bg-slate-100 dark:bg-slate-700{% endif %}">
+          <i class="fas fa-{{ 'satellite-dish' if cls.scheduled_at > now else 'history' }} text-xl
+            {% if cls.scheduled_at > now %}text-red-500{% else %}text-slate-400{% endif %}"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ cls.title }}</h3>
+            {% if cls.scheduled_at > now %}
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500 dark:bg-red-900/20">Upcoming</span>
+            {% else %}
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 dark:bg-slate-700">Past</span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-slate-400">
+            <i class="fas fa-book-open mr-1"></i>{{ cls.course.title }}
+            <span class="mx-1 text-slate-300">·</span>
+            <i class="fas fa-calendar mr-1"></i>{{ cls.scheduled_at.strftime('%d %b %Y, %I:%M %p') }}
+            <span class="mx-1 text-slate-300">·</span>
+            <i class="fas fa-clock mr-1"></i>{{ cls.duration_minutes }} min
+          </p>
+          {% if cls.description %}
+          <p class="text-xs text-slate-400 mt-1 line-clamp-1">{{ cls.description }}</p>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          {% if cls.meeting_link %}
+          <a href="{{ cls.meeting_link }}" target="_blank" rel="noopener"
+            class="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors">
+            <i class="fas fa-video mr-1"></i>Join
+          </a>
+          {% endif %}
+          {% if cls.recording_url %}
+          <a href="{{ cls.recording_url }}" target="_blank"
+            class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-colors">
+            <i class="fas fa-play mr-1"></i>Recording
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-16 text-center">
+    <div class="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-video text-red-400 text-2xl"></i>
+    </div>
+    <p class="text-slate-500 font-medium mb-3">No live classes scheduled yet.</p>
+    <button onclick="document.getElementById('add-class-modal').classList.remove('hidden')"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition-colors">
+      <i class="fas fa-plus"></i> Schedule First Class
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Live Class Modal -->
+<div id="add-class-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Schedule Live Class</h3>
+      <button onclick="document.getElementById('add-class-modal').classList.add('hidden')"
+        class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-400 transition-colors">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form method="POST" action="{{ url_for('faculty.add_live_class') }}" class="p-6 space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Class Title <span class="text-red-500">*</span></label>
+        <input type="text" name="title" required placeholder="e.g. Introduction to Variables"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Course <span class="text-red-500">*</span></label>
+        <select name="course_id" required class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+          <option value="">Select course</option>
+          {% for c in courses %}
+          <option value="{{ c.id }}">{{ c.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Date & Time <span class="text-red-500">*</span></label>
+          <input type="datetime-local" name="scheduled_at" required
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Duration (min)</label>
+          <input type="number" name="duration_minutes" value="60" min="10"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Meeting Link</label>
+        <input type="url" name="meeting_link" placeholder="https://meet.google.com/..."
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Description</label>
+        <textarea name="description" rows="2" placeholder="Brief description…"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"></textarea>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="document.getElementById('add-class-modal').classList.add('hidden')"
+          class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          Cancel
+        </button>
+        <button type="submit"
+          class="flex-1 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+          <i class="fas fa-calendar-plus mr-1.5"></i>Schedule
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Pass `now` to Jinja context — inject it here for template comparison
+// The `now` variable should be passed from the route:
+// Add to faculty.py route: from datetime import datetime; now=datetime.utcnow()
+const now = new Date();
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Activity Logs — EduFlow LMS{% endblock %}
+{% block page_title %}Activity Logs{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <h2 class="text-xl font-bold text-slate-800 dark:text-white">System Activity Logs</h2>
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="table-wrap">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-700/50">
+          <tr>
+            <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Role</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Action</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Details</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">IP</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Time</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          {% for log in logs.items %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <td class="px-5 py-3">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold
+                {% if log.user_role=='admin' %}bg-red-50 text-red-500 dark:bg-red-900/20
+                {% elif log.user_role=='faculty' %}bg-violet-50 text-violet-500 dark:bg-violet-900/20
+                {% else %}bg-blue-50 text-blue-500 dark:bg-blue-900/20{% endif %}">
+                {{ log.user_role }}
+              </span>
+            </td>
+            <td class="px-4 py-3 font-medium text-slate-700 dark:text-slate-200 text-xs">{{ log.action }}</td>
+            <td class="px-4 py-3 text-slate-400 text-xs hidden md:table-cell max-w-[200px] truncate">{{ log.details or '—' }}</td>
+            <td class="px-4 py-3 text-slate-400 text-xs hidden sm:table-cell font-mono">{{ log.ip_address or '—' }}</td>
+            <td class="px-4 py-3 text-slate-400 text-xs">{{ log.logged_at.strftime('%d %b, %H:%M') }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">No logs yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if logs.pages > 1 %}
+    <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+      <p class="text-xs text-slate-400">Page {{ logs.page }} of {{ logs.pages }}</p>
+      <div class="flex gap-1">
+        {% if logs.has_prev %}<a href="{{ url_for('admin.activity_logs', page=logs.prev_num) }}" class="px-3 py-1.5 rounded-lg text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">← Prev</a>{% endif %}
+        {% if logs.has_next %}<a href="{{ url_for('admin.activity_logs', page=logs.next_num) }}" class="px-3 py-1.5 rounded-lg text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">Next →</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

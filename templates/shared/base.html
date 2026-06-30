@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="{% block html_class %}{% endblock %}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
+  <title>{% block title %}EduFlow LMS{% endblock %}</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230ea5e9'/><text y='.9em' font-size='70' x='50%' dominant-baseline='middle' text-anchor='middle'>🎓</text></svg>">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#0ea5e9', 600:'#0284c7', 700:'#0369a1', 800:'#075985', 900:'#0c4a6e' },
+            accent: { 400:'#a78bfa', 500:'#8b5cf6', 600:'#7c3aed' },
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          transitionDuration: { DEFAULT: '200ms' },
+        }
+      }
+    }
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <style>
+    * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Sidebar transitions */
+    #sidebar { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s ease; }
+    .sidebar-link { transition: all 0.15s ease; }
+    .sidebar-link:hover, .sidebar-link.active {
+      background: linear-gradient(90deg, rgba(14,165,233,0.12) 0%, transparent 100%);
+      border-left: 3px solid #0ea5e9;
+    }
+    .dark .sidebar-link:hover, .dark .sidebar-link.active {
+      background: linear-gradient(90deg, rgba(14,165,233,0.18) 0%, transparent 100%);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+    /* Card hover */
+    .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .stat-card:hover { transform: translateY(-2px); }
+
+    /* Theme toggle */
+    #theme-toggle { transition: transform 0.3s ease; }
+    #theme-toggle:hover { transform: rotate(20deg); }
+
+    /* Flash messages */
+    .flash-msg { animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* Mobile overlay */
+    #sidebar-overlay { transition: opacity 0.3s ease; }
+
+    /* Table responsive */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 min-h-screen">
+
+<!-- ── FLASH MESSAGES ── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="fixed top-4 right-4 z-[9999] space-y-2 max-w-sm w-full" id="flash-container">
+  {% for category, message in messages %}
+  <div class="flash-msg flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium
+    {% if category == 'error' %}bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300
+    {% elif category == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300
+    {% elif category == 'warning' %}bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300
+    {% else %}bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300{% endif %}">
+    <i class="fas {% if category == 'error' %}fa-circle-xmark{% elif category == 'success' %}fa-circle-check{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %} text-base"></i>
+    <span class="flex-1">{{ message }}</span>
+    <button onclick="this.parentElement.remove()" class="opacity-60 hover:opacity-100"><i class="fas fa-xmark"></i></button>
+  </div>
+  {% endfor %}
+</div>
+<script>setTimeout(()=>{ const c=document.getElementById('flash-container'); if(c) c.style.opacity='0'; setTimeout(()=>c?.remove(),300); },5000);</script>
+{% endif %}
+{% endwith %}
+
+{% block full_page %}
+<!-- ── LAYOUT WITH SIDEBAR ── -->
+<div class="flex min-h-screen">
+
+  <!-- ── SIDEBAR ── -->
+  {% block sidebar %}{% endblock %}
+
+  <!-- ── MOBILE OVERLAY ── -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+  <!-- ── MAIN AREA ── -->
+  <div class="flex-1 flex flex-col min-w-0 {% block main_offset %}lg:ml-64{% endblock %}">
+
+    <!-- ── TOP NAVBAR ── -->
+    {% block navbar %}
+    <header class="sticky top-0 z-20 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between h-16 px-4 md:px-6">
+        <!-- Mobile hamburger -->
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">
+          <i class="fas fa-bars text-lg"></i>
+        </button>
+
+        <!-- Page title -->
+        <div class="hidden lg:block">
+          <h1 class="text-lg font-semibold text-slate-700 dark:text-slate-200">{% block page_title %}Dashboard{% endblock %}</h1>
+        </div>
+
+        <!-- Right actions -->
+        <div class="flex items-center gap-2 ml-auto">
+          <!-- Search (md+) -->
+          <div class="hidden md:flex items-center bg-slate-100 dark:bg-slate-700 rounded-xl px-3 py-2 gap-2 text-sm">
+            <i class="fas fa-search text-slate-400 text-xs"></i>
+            <input type="text" placeholder="Quick search…" class="bg-transparent outline-none w-36 text-slate-600 dark:text-slate-300 placeholder-slate-400 text-sm">
+          </div>
+
+          <!-- Notifications — URL resolves per role -->
+          {% if current_user.is_authenticated %}
+            {% if current_user.get_role() == 'student' %}
+              {% set notif_url = url_for('student.notifications') %}
+            {% elif current_user.get_role() == 'admin' %}
+              {% set notif_url = url_for('admin.notifications') %}
+            {% elif current_user.get_role() == 'faculty' %}
+              {% set notif_url = url_for('faculty.notifications') %}
+            {% else %}
+              {% set notif_url = '#' %}
+            {% endif %}
+          {% else %}
+            {% set notif_url = '#' %}
+          {% endif %}
+          <a href="{{ notif_url }}" class="relative p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400">
+            <i class="fas fa-bell text-lg"></i>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </a>
+
+          <!-- Theme toggle -->
+          <button id="theme-toggle" onclick="toggleTheme()" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Toggle theme">
+            <i class="fas fa-sun text-lg dark:hidden"></i>
+            <i class="fas fa-moon text-lg hidden dark:block"></i>
+          </button>
+
+          <!-- User avatar -->
+          <div class="relative group">
+            <button class="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
+              {% block user_avatar %}
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-white font-bold text-sm">
+                {{ current_user.name[0].upper() if current_user.is_authenticated else 'U' }}
+              </div>
+              {% endblock %}
+              <span class="hidden md:block text-sm font-medium text-slate-700 dark:text-slate-200 max-w-[120px] truncate">
+                {{ current_user.name if current_user.is_authenticated else 'User' }}
+              </span>
+              <i class="fas fa-chevron-down text-xs text-slate-400"></i>
+            </button>
+            <!-- Dropdown -->
+            <div class="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all">
+              {% block user_menu %}{% endblock %}
+              <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-slate-50 dark:hover:bg-slate-700">
+                <i class="fas fa-sign-out-alt w-4"></i> Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    {% endblock %}
+
+    <!-- ── PAGE CONTENT ── -->
+    <main class="flex-1 p-4 md:p-6 lg:p-8">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- ── FOOTER ── -->
+    <footer class="text-center py-4 text-xs text-slate-400 dark:text-slate-500 border-t border-slate-200 dark:border-slate-700">
+      © {{ 2026 }} EduFlow LMS • Built With Love By Roni Seikh
+    </footer>
+  </div>
+</div>
+{% endblock %}
+
+<!-- ── GLOBAL SCRIPTS ── -->
+<script>
+// ── Theme Management ──
+function getTheme() { return localStorage.getItem('theme') || 'light'; }
+function applyTheme(t) {
+  document.documentElement.classList.toggle('dark', t === 'dark');
+  localStorage.setItem('theme', t);
+}
+function toggleTheme() { applyTheme(getTheme() === 'dark' ? 'light' : 'dark'); }
+applyTheme(getTheme());
+
+// ── Sidebar Toggle ──
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('sidebar-overlay');
+  if (!s) return;
+  const hidden = s.classList.toggle('-translate-x-full');
+  o.classList.toggle('hidden', hidden);
+}
+
+// Close flash on click
+document.querySelectorAll('.flash-msg button').forEach(b => b.addEventListener('click', () => b.closest('.flash-msg').remove()));
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

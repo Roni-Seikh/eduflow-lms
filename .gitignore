@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.venv/
+.env
+static/uploads/*
+!static/uploads/.gitkeep
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+instance/

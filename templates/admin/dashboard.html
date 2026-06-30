@@ -1,0 +1,236 @@
+{% extends "admin/base.html" %}
+{% block title %}Admin Dashboard — EduFlow LMS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Welcome Banner -->
+  <div class="bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 rounded-2xl p-6 text-white shadow-lg shadow-red-500/20">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold mb-1">Welcome back, {{ current_user.name }}! 👋</h2>
+        <p class="text-red-100 text-sm">Here's what's happening in your institution today.</p>
+      </div>
+      <div class="text-right hidden md:block">
+        <p class="text-red-100 text-sm" id="live-date"></p>
+        <p class="font-bold text-lg" id="live-time"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    {% set stats = [
+      ('Total Students', total_students, 'fa-users', 'from-blue-400 to-blue-600', 'blue'),
+      ('Total Faculty', total_faculty, 'fa-chalkboard-teacher', 'from-violet-400 to-violet-600', 'violet'),
+      ('Total Courses', total_courses, 'fa-book-open', 'from-emerald-400 to-emerald-600', 'emerald'),
+      ('Total Exams', total_exams, 'fa-file-pen', 'from-amber-400 to-amber-600', 'amber'),
+    ] %}
+    {% for label, value, icon, gradient, color in stats %}
+    <div class="stat-card bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 bg-gradient-to-br {{ gradient }} rounded-xl flex items-center justify-center flex-shrink-0 shadow">
+        <i class="fas {{ icon }} text-white text-lg"></i>
+      </div>
+      <div>
+        <p class="text-2xl font-extrabold text-slate-800 dark:text-white">{{ value }}</p>
+        <p class="text-xs text-slate-400 font-medium">{{ label }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Enrollment Chart -->
+    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-bold text-slate-700 dark:text-slate-200">Monthly Enrollment Overview</h3>
+        <span class="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">This Year</span>
+      </div>
+      <div class="relative h-56">
+        <canvas id="enrollChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Distribution Doughnut -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-5">User Distribution</h3>
+      <div class="relative h-40">
+        <canvas id="distChart"></canvas>
+      </div>
+      <div class="mt-4 space-y-2">
+        <div class="flex items-center justify-between text-sm">
+          <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>Students</span>
+          <span class="font-bold text-slate-700 dark:text-slate-200">{{ total_students }}</span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-violet-500 inline-block"></span>Faculty</span>
+          <span class="font-bold text-slate-700 dark:text-slate-200">{{ total_faculty }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tables Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Recent Students -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="font-bold text-slate-700 dark:text-slate-200">Recent Students</h3>
+        <a href="{{ url_for('admin.students') }}" class="text-xs text-primary-500 hover:underline font-semibold">View all →</a>
+      </div>
+      <div class="table-wrap">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 dark:bg-slate-700/50">
+            <tr>
+              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Student</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">ID</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Joined</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            {% for s in recent_students %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+              <td class="px-6 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                    {{ s.name[0].upper() }}
+                  </div>
+                  <span class="font-medium text-slate-700 dark:text-slate-200 truncate max-w-[120px]">{{ s.name }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3"><code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">{{ s.student_id }}</code></td>
+              <td class="px-4 py-3 text-slate-400 text-xs">{{ s.created_at.strftime('%d %b') }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="px-6 py-8 text-center text-slate-400 text-sm">No students yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Activity Logs -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="font-bold text-slate-700 dark:text-slate-200">Recent Activity</h3>
+        <a href="{{ url_for('admin.activity_logs') }}" class="text-xs text-primary-500 hover:underline font-semibold">View all →</a>
+      </div>
+      <div class="divide-y divide-slate-100 dark:divide-slate-700 max-h-72 overflow-y-auto">
+        {% for log in recent_logs %}
+        <div class="flex items-start gap-3 px-6 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
+            {% if log.user_role == 'admin' %}bg-red-100 dark:bg-red-900/30
+            {% elif log.user_role == 'faculty' %}bg-violet-100 dark:bg-violet-900/30
+            {% else %}bg-blue-100 dark:bg-blue-900/30{% endif %}">
+            <i class="fas fa-{{ 'shield-halved' if log.user_role == 'admin' else ('chalkboard-teacher' if log.user_role == 'faculty' else 'user') }} text-xs
+              {% if log.user_role == 'admin' %}text-red-500{% elif log.user_role == 'faculty' %}text-violet-500{% else %}text-blue-500{% endif %}"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-medium text-slate-700 dark:text-slate-200">{{ log.action }}</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">{{ log.logged_at.strftime('%d %b, %H:%M') }}</p>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold
+            {% if log.user_role == 'admin' %}bg-red-50 text-red-500 dark:bg-red-900/20
+            {% elif log.user_role == 'faculty' %}bg-violet-50 text-violet-500 dark:bg-violet-900/20
+            {% else %}bg-blue-50 text-blue-500 dark:bg-blue-900/20{% endif %}">
+            {{ log.user_role }}
+          </span>
+        </div>
+        {% else %}
+        <div class="px-6 py-8 text-center text-slate-400 text-sm">No activity yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Pending Requests Banner -->
+  {% if pending_requests > 0 %}
+  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl px-6 py-4 flex items-center gap-4">
+    <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-xl flex items-center justify-center">
+      <i class="fas fa-key text-amber-500"></i>
+    </div>
+    <div class="flex-1">
+      <p class="font-semibold text-amber-700 dark:text-amber-300">{{ pending_requests }} pending password reset request{{ 's' if pending_requests > 1 }}</p>
+      <p class="text-sm text-amber-600 dark:text-amber-400">Students or faculty are waiting for credential updates.</p>
+    </div>
+    <a href="{{ url_for('admin.password_requests') }}" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
+      Review Now
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const d = document.getElementById('live-date');
+  const t = document.getElementById('live-time');
+  if (d) d.textContent = now.toLocaleDateString('en-IN', {weekday:'long',day:'numeric',month:'long'});
+  if (t) t.textContent = now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Chart colors based on theme
+const isDark = () => document.documentElement.classList.contains('dark');
+const gridColor = () => isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+const textColor = () => isDark() ? '#94a3b8' : '#64748b';
+
+// Enrollment Bar Chart
+const enrollCtx = document.getElementById('enrollChart')?.getContext('2d');
+if (enrollCtx) {
+  new Chart(enrollCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets: [{
+        label: 'Enrollments',
+        data: [12, 19, 15, 28, 22, 35, 30, 25, 40, 38, 45, 50],
+        backgroundColor: 'rgba(14,165,233,0.7)',
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: textColor(), font: { size: 11 } } },
+        y: { grid: { color: gridColor() }, ticks: { color: textColor(), font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// Distribution Doughnut
+const distCtx = document.getElementById('distChart')?.getContext('2d');
+if (distCtx) {
+  new Chart(distCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Students', 'Faculty'],
+      datasets: [{
+        data: [{{ total_students }}, {{ total_faculty }}],
+        backgroundColor: ['#3b82f6','#8b5cf6'],
+        borderWidth: 0,
+        hoverOffset: 5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '72%',
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+</script>
+{% endblock %}

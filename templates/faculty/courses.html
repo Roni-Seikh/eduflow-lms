@@ -1,0 +1,95 @@
+{% extends "faculty/base.html" %}
+{% block title %}My Courses — EduFlow LMS{% endblock %}
+{% block page_title %}My Courses{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 dark:text-white">My Courses</h2>
+      <p class="text-sm text-slate-400 mt-0.5">{{ courses|length }} course{{ 's' if courses|length != 1 }}</p>
+    </div>
+    <a href="{{ url_for('faculty.create_course') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl font-semibold text-sm shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+      <i class="fas fa-plus"></i> Create Course
+    </a>
+  </div>
+
+  {% if courses %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for course in courses %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:-translate-y-1 hover:shadow-md transition-all">
+      <div class="h-36 bg-gradient-to-br from-violet-400 to-purple-600 relative overflow-hidden">
+        {% if course.thumbnail %}
+        <img src="{{ url_for('static', filename='uploads/thumbnails/'+course.thumbnail) }}" class="w-full h-full object-cover">
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center">
+          <i class="fas fa-book-open text-4xl text-white/40"></i>
+        </div>
+        {% endif %}
+        <div class="absolute top-3 left-3">
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full text-white
+            {% if course.level == 'Beginner' %}bg-emerald-500{% elif course.level == 'Intermediate' %}bg-amber-500{% else %}bg-red-500{% endif %}">
+            {{ course.level }}
+          </span>
+        </div>
+        <div class="absolute top-3 right-3 flex flex-col gap-1 items-end">
+          {% if course.is_closed %}
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500 text-white">Closed</span>
+          {% elif course.is_active %}
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500 text-white">Active</span>
+          {% else %}
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-500 text-white">Inactive</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="p-4">
+        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm mb-1 line-clamp-1">{{ course.title }}</h3>
+        <p class="text-xs text-slate-400 line-clamp-2 mb-3">{{ course.description or 'No description.' }}</p>
+        <div class="flex items-center gap-3 text-xs text-slate-400 mb-4">
+          <span><i class="fas fa-users mr-1"></i>{{ course.enrollments.count() }} students</span>
+          <span><i class="fas fa-film mr-1"></i>{{ course.lectures.count() }} lectures</span>
+          <span><i class="fas fa-file-pen mr-1"></i>{{ course.exams.count() }} exams</span>
+        </div>
+        <div class="flex gap-2">
+          <a href="{{ url_for('faculty.edit_course', course_id=course.id) }}" class="flex-1 py-2 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 text-xs font-semibold rounded-xl text-center hover:bg-violet-100 transition-colors">
+            <i class="fas fa-pen mr-1"></i>Edit
+          </a>
+          <a href="{{ url_for('faculty.mark_attendance', course_id=course.id) }}" class="flex-1 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-xl text-center hover:bg-emerald-100 transition-colors">
+            <i class="fas fa-calendar-check mr-1"></i>Attendance
+          </a>
+          <!-- Close / Reopen -->
+          <form method="POST" action="{{ url_for('faculty.toggle_close_course', course_id=course.id) }}"
+            onsubmit="return confirm('{{ 'Reopen' if course.is_closed else 'Close' }} this course? Students will be notified.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+            <button type="submit"
+              class="py-2 px-3 text-xs font-semibold rounded-xl transition-colors
+              {% if course.is_closed %}bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100
+              {% else %}bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100{% endif %}"
+              title="{{ 'Reopen Course' if course.is_closed else 'Close Course' }}">
+              <i class="fas fa-{{ 'lock-open' if course.is_closed else 'lock' }}"></i>
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('faculty.delete_course', course_id=course.id) }}" onsubmit="return confirm('Delete this course?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+            <button type="submit" class="py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-500 text-xs font-semibold rounded-xl hover:bg-red-100 transition-colors">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-16 text-center">
+    <div class="w-16 h-16 bg-violet-50 dark:bg-violet-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-book-open text-violet-400 text-2xl"></i>
+    </div>
+    <p class="text-slate-500 font-medium mb-3">No courses created yet.</p>
+    <a href="{{ url_for('faculty.create_course') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-600 text-white rounded-xl text-sm font-semibold transition-colors">
+      <i class="fas fa-plus"></i> Create First Course
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

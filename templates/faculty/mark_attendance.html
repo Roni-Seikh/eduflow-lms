@@ -1,0 +1,117 @@
+{% extends "faculty/base.html" %}
+{% block title %}Mark Attendance — EduFlow LMS{% endblock %}
+{% block page_title %}Mark Attendance{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5">
+  <nav class="flex items-center gap-2 text-sm text-slate-400">
+    <a href="{{ url_for('faculty.attendance') }}" class="hover:text-violet-500">Attendance</a>
+    <i class="fas fa-chevron-right text-xs"></i>
+    <span class="text-slate-600 dark:text-slate-300">{{ course.title }}</span>
+  </nav>
+
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center">
+        <i class="fas fa-calendar-check text-white"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-700 dark:text-slate-200">{{ course.title }}</h3>
+        <p class="text-xs text-slate-400">{{ students|length }} enrolled students</p>
+      </div>
+    </div>
+
+    <form method="POST" class="p-6 space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+      <!-- Date picker -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Attendance Date <span class="text-red-500">*</span></label>
+        <input type="date" name="date" value="{{ today }}" required
+          class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+      </div>
+
+      <!-- Quick actions -->
+      <div class="flex gap-2">
+        <button type="button" onclick="markAll('Present')" class="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition-colors">
+          <i class="fas fa-check-double mr-1"></i>Mark All Present
+        </button>
+        <button type="button" onclick="markAll('Absent')" class="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors">
+          <i class="fas fa-times mr-1"></i>Mark All Absent
+        </button>
+      </div>
+
+      <!-- Student list -->
+      {% if students %}
+      <div class="space-y-2">
+        {% for student in students %}
+        <div class="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            {{ student.name[0].upper() }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ student.name }}</p>
+            <p class="text-xs text-slate-400 font-mono">{{ student.student_id }}</p>
+          </div>
+          <div class="flex gap-2 attendance-row" data-id="{{ student.id }}">
+            {% for status, color in [('Present','emerald'), ('Late','amber'), ('Absent','red')] %}
+            <label class="cursor-pointer">
+              <input type="radio" name="status_{{ student.id }}" value="{{ status }}" class="hidden status-radio" {% if loop.last %}checked{% endif %}>
+              <span class="status-btn px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all
+                border-{{ color }}-200 dark:border-{{ color }}-700 text-{{ color }}-500 hover:bg-{{ color }}-50 dark:hover:bg-{{ color }}-900/20"
+                data-status="{{ status }}" data-color="{{ color }}">
+                {{ status }}
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="flex items-center justify-end gap-3">
+        <a href="{{ url_for('faculty.attendance') }}" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          Cancel
+        </a>
+        <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+          <i class="fas fa-floppy-disk mr-1.5"></i>Save Attendance
+        </button>
+      </div>
+
+      {% else %}
+      <div class="py-12 text-center text-slate-400">
+        <i class="fas fa-users text-3xl mb-3 block text-slate-200"></i>
+        No students enrolled in this course yet.
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Style selected attendance buttons
+document.querySelectorAll('.status-radio').forEach(radio => {
+  radio.addEventListener('change', function() {
+    const row = this.closest('.attendance-row');
+    row.querySelectorAll('.status-btn').forEach(btn => {
+      btn.classList.remove('bg-emerald-100','bg-amber-100','bg-red-100','dark:bg-emerald-900/30','dark:bg-amber-900/30','dark:bg-red-900/30','ring-2');
+    });
+    const selectedBtn = this.nextElementSibling;
+    const color = selectedBtn.dataset.color;
+    selectedBtn.classList.add(`bg-${color}-100`, `dark:bg-${color}-900/30`, 'ring-2');
+  });
+});
+
+// Trigger initial styling for checked radios
+document.querySelectorAll('.status-radio:checked').forEach(r => r.dispatchEvent(new Event('change')));
+
+function markAll(status) {
+  document.querySelectorAll('.attendance-row').forEach(row => {
+    const radio = row.querySelector(`input[value="${status}"]`);
+    if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "student/base.html" %}
+{% block title %}My Attendance — EduFlow LMS{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-xl font-bold text-slate-800 dark:text-white">My Attendance</h2>
+    <p class="text-sm text-slate-400 mt-0.5">Track your attendance across all enrolled courses</p>
+  </div>
+
+  {% if attendance_data %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    {% for item in attendance_data %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br
+          {% if item.percentage >= 75 %}from-emerald-400 to-emerald-600{% elif item.percentage >= 50 %}from-amber-400 to-amber-600{% else %}from-red-400 to-red-600{% endif %}
+          flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+          {{ item.percentage|int }}%
+        </div>
+        <div class="min-w-0">
+          <h3 class="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate">{{ item.course.title }}</h3>
+          <p class="text-xs text-slate-400 mt-0.5">{{ item.course.faculty.name }}</p>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-2">
+        <div class="h-full rounded-full transition-all duration-500
+          {% if item.percentage >= 75 %}bg-gradient-to-r from-emerald-400 to-emerald-500
+          {% elif item.percentage >= 50 %}bg-gradient-to-r from-amber-400 to-amber-500
+          {% else %}bg-gradient-to-r from-red-400 to-red-500{% endif %}"
+          style="width: {{ item.percentage }}%">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-semibold
+          {% if item.percentage >= 75 %}text-emerald-500{% elif item.percentage >= 50 %}text-amber-500{% else %}text-red-500{% endif %}">
+          {{ item.percentage }}% attendance
+        </span>
+        <span class="text-slate-400">
+          {% if item.percentage >= 75 %}
+          <i class="fas fa-check-circle text-emerald-500 mr-1"></i>Good standing
+          {% elif item.percentage >= 50 %}
+          <i class="fas fa-exclamation-circle text-amber-500 mr-1"></i>Needs improvement
+          {% else %}
+          <i class="fas fa-times-circle text-red-500 mr-1"></i>Critical — attend more classes
+          {% endif %}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Attendance note -->
+  <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl px-5 py-4 flex items-start gap-3">
+    <i class="fas fa-circle-info text-blue-500 mt-0.5 flex-shrink-0"></i>
+    <p class="text-sm text-blue-700 dark:text-blue-300">
+      <strong>Minimum Attendance Required:</strong> 75% attendance is required to be eligible for final exams and certificates. Classes marked "Late" count as 50% attendance.
+    </p>
+  </div>
+
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-16 text-center">
+    <div class="w-14 h-14 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-calendar-check text-slate-300 text-2xl"></i>
+    </div>
+    <p class="text-slate-400 font-medium">No attendance records yet.</p>
+    <p class="text-slate-400 text-sm mt-1">Enroll in courses to start tracking attendance.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "faculty/base.html" %}
+{% block title %}Recorded Lectures — EduFlow LMS{% endblock %}
+{% block page_title %}Recorded Lectures{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 dark:text-white">Recorded Lectures</h2>
+      <p class="text-sm text-slate-400 mt-0.5">{{ lectures|length }} lecture{{ 's' if lectures|length != 1 }} uploaded</p>
+    </div>
+    <button onclick="document.getElementById('add-lecture-modal').classList.remove('hidden')"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl font-semibold text-sm shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+      <i class="fas fa-plus"></i> Add Lecture
+    </button>
+  </div>
+
+  {% if lectures %}
+  <div class="space-y-3">
+    {% for lec in lectures %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 flex items-start gap-4">
+      <div class="w-12 h-12 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-play-circle text-2xl text-violet-500"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm mb-1">{{ lec.title }}</h3>
+        <p class="text-xs text-slate-400 mb-2">
+          <i class="fas fa-book-open mr-1"></i>{{ lec.course.title }}
+          {% if lec.duration %}<span class="mx-1">·</span><i class="fas fa-clock mr-1"></i>{{ lec.duration }}{% endif %}
+        </p>
+        {% if lec.description %}<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-2">{{ lec.description }}</p>{% endif %}
+        <div class="flex items-center gap-2 flex-wrap">
+          {% if lec.video_url %}
+          <a href="{{ lec.video_url }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 rounded-lg text-xs font-semibold hover:bg-violet-100 transition-colors">
+            <i class="fas fa-external-link-alt text-[10px]"></i>Video URL
+          </a>
+          {% endif %}
+          {% if lec.video_file %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold">
+            <i class="fas fa-file-video text-[10px]"></i>Video Uploaded
+          </span>
+          {% endif %}
+          {% if lec.pdf_file %}
+          <a href="{{ url_for('static', filename='uploads/pdfs/'+lec.pdf_file) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-semibold hover:bg-amber-100 transition-colors">
+            <i class="fas fa-file-pdf text-[10px]"></i>PDF Notes
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="text-xs text-slate-400 flex-shrink-0">{{ lec.created_at.strftime('%d %b') }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-16 text-center">
+    <div class="w-16 h-16 bg-violet-50 dark:bg-violet-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-film text-violet-400 text-2xl"></i>
+    </div>
+    <p class="text-slate-500 font-medium mb-3">No lectures uploaded yet.</p>
+    <button onclick="document.getElementById('add-lecture-modal').classList.remove('hidden')"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-600 text-white rounded-xl text-sm font-semibold transition-colors">
+      <i class="fas fa-plus"></i> Upload First Lecture
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Lecture Modal -->
+<div id="add-lecture-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-white dark:bg-slate-800 px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Add Recorded Lecture</h3>
+      <button onclick="document.getElementById('add-lecture-modal').classList.add('hidden')"
+        class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-400 transition-colors">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form method="POST" action="{{ url_for('faculty.add_lecture') }}" enctype="multipart/form-data" class="p-6 space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Lecture Title <span class="text-red-500">*</span></label>
+        <input type="text" name="title" required placeholder="e.g. Variables and Data Types"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Course <span class="text-red-500">*</span></label>
+        <select name="course_id" required class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+          <option value="">Select course</option>
+          {% for c in courses %}
+          <option value="{{ c.id }}">{{ c.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Description</label>
+        <textarea name="description" rows="2" placeholder="Brief description of lecture content…"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Video URL (YouTube/Vimeo)</label>
+        <input type="url" name="video_url" placeholder="https://youtube.com/watch?v=..."
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Upload Video File</label>
+        <input type="file" name="video_file" accept="video/*"
+          class="text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-600 hover:file:bg-violet-100 dark:file:bg-violet-900/20 dark:file:text-violet-400 cursor-pointer w-full">
+        <p class="text-xs text-slate-400 mt-1">MP4, AVI, MOV · Max 100MB</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Upload PDF Notes</label>
+        <input type="file" name="pdf_file" accept=".pdf"
+          class="text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-600 hover:file:bg-amber-100 dark:file:bg-amber-900/20 dark:file:text-amber-400 cursor-pointer w-full">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Duration</label>
+        <input type="text" name="duration" placeholder="e.g. 45 min"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="document.getElementById('add-lecture-modal').classList.add('hidden')"
+          class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          Cancel
+        </button>
+        <button type="submit"
+          class="flex-1 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+          <i class="fas fa-upload mr-1.5"></i>Upload Lecture
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

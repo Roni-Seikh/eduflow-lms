@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Courses — EduFlow LMS{% endblock %}
+{% block page_title %}Course Monitoring{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <h2 class="text-xl font-bold text-slate-800 dark:text-white">All Courses</h2>
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="table-wrap">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-700/50">
+          <tr>
+            <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Course</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Faculty</th>
+            <th class="text-center px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Students</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Level</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          {% for course in courses %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {% if course.thumbnail %}<img src="{{ url_for('static', filename='uploads/thumbnails/'+course.thumbnail) }}" class="w-full h-full object-cover">{% else %}<i class="fas fa-book-open text-white text-sm"></i>{% endif %}
+                </div>
+                <div>
+                  <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ course.title }}</p>
+                  <p class="text-xs text-slate-400">{{ course.duration or 'N/A' }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-4 hidden md:table-cell text-slate-500 dark:text-slate-400 text-xs">{{ course.faculty.name }}</td>
+            <td class="px-4 py-4 text-center"><span class="font-bold text-primary-500">{{ course.enrollments.count() }}</span></td>
+            <td class="px-4 py-4 hidden sm:table-cell">
+              <span class="text-xs px-2 py-0.5 rounded-full font-semibold {% if course.level=='Beginner' %}bg-emerald-50 text-emerald-600{% elif course.level=='Intermediate' %}bg-amber-50 text-amber-600{% else %}bg-red-50 text-red-600{% endif %}">{{ course.level }}</span>
+            </td>
+            <td class="px-4 py-4">
+              {% if course.is_active %}<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Active</span>{% else %}<span class="text-xs text-slate-400">Inactive</span>{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">No courses yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

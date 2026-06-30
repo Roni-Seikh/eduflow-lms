@@ -1,0 +1,181 @@
+{% extends "faculty/base.html" %}
+{% block title %}{{ action }} Exam — EduFlow LMS{% endblock %}
+{% block page_title %}{{ action }} Exam{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-5">
+  <nav class="flex items-center gap-2 text-sm text-slate-400">
+    <a href="{{ url_for('faculty.exams') }}" class="hover:text-violet-500 transition-colors">Exams</a>
+    <i class="fas fa-chevron-right text-xs"></i>
+    <span class="text-slate-600 dark:text-slate-300">{{ action }} Exam</span>
+  </nav>
+
+  <form method="POST" action="" id="exam-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+    <!-- Exam Details Card -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-5">
+      <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center">
+          <i class="fas fa-file-pen text-white"></i>
+        </div>
+        <h3 class="font-bold text-slate-700 dark:text-slate-200">Exam Details</h3>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Exam Title <span class="text-red-500">*</span></label>
+          <input type="text" name="title" required placeholder="e.g. Mid-Term Examination"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Course <span class="text-red-500">*</span></label>
+          <select name="course_id" required class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+            <option value="">Select course</option>
+            {% for c in courses %}
+            <option value="{{ c.id }}">{{ c.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Duration (minutes) <span class="text-red-500">*</span></label>
+          <input type="number" name="duration_minutes" value="60" min="5" max="300" required
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Passing Score (%)</label>
+          <input type="number" name="passing_score" value="60" min="1" max="100"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div class="flex items-center gap-3 mt-2">
+          <input type="checkbox" name="randomize_questions" id="randomize" checked class="w-4 h-4 rounded accent-violet-500">
+          <label for="randomize" class="text-sm text-slate-600 dark:text-slate-300">Randomize question order</label>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Description</label>
+          <textarea name="description" rows="2" placeholder="Brief description of this exam…"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 resize-none"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions Section -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center">
+            <i class="fas fa-list-ol text-white"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-700 dark:text-slate-200">Questions</h3>
+            <p class="text-xs text-slate-400" id="q-count">0 questions added</p>
+          </div>
+        </div>
+        <button type="button" onclick="addQuestion()" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl text-sm font-semibold transition-colors">
+          <i class="fas fa-plus"></i> Add Question
+        </button>
+      </div>
+
+      <div id="questions-container" class="p-6 space-y-4">
+        <!-- Questions injected here -->
+      </div>
+
+      <div id="empty-state" class="p-12 text-center">
+        <div class="w-14 h-14 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-circle-question text-slate-300 text-2xl"></i>
+        </div>
+        <p class="text-slate-400 font-medium">No questions yet</p>
+        <p class="text-slate-400 text-sm mt-1">Click "Add Question" to start building your exam</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3 mt-5">
+      <a href="{{ url_for('faculty.exams') }}" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        Cancel
+      </a>
+      <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+        <i class="fas fa-floppy-disk mr-1.5"></i>Save Exam
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let qIndex = 0;
+
+function updateCount() {
+  const count = document.querySelectorAll('.question-block').length;
+  document.getElementById('q-count').textContent = count + ' question' + (count !== 1 ? 's' : '') + ' added';
+  document.getElementById('empty-state').style.display = count === 0 ? 'block' : 'none';
+}
+
+function addQuestion() {
+  qIndex++;
+  document.getElementById('empty-state').style.display = 'none';
+
+  const block = document.createElement('div');
+  block.className = 'question-block bg-slate-50 dark:bg-slate-700/50 rounded-xl p-5 border border-slate-200 dark:border-slate-600';
+  block.innerHTML = `
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-sm font-bold text-slate-600 dark:text-slate-300 flex items-center gap-2">
+        <span class="w-6 h-6 bg-violet-500 text-white rounded-full flex items-center justify-center text-xs">${qIndex}</span>
+        Question ${qIndex}
+      </span>
+      <button type="button" onclick="removeQuestion(this)" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+        <i class="fas fa-trash text-xs"></i>
+      </button>
+    </div>
+
+    <div class="mb-3">
+      <textarea name="questions[]" required rows="2" placeholder="Enter your question here…"
+        class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 resize-none"></textarea>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+      ${['A','B','C','D'].map(opt => `
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0
+            ${opt==='A'?'bg-blue-100 text-blue-600 dark:bg-blue-900/30':opt==='B'?'bg-violet-100 text-violet-600 dark:bg-violet-900/30':opt==='C'?'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30':'bg-amber-100 text-amber-600 dark:bg-amber-900/30'}">
+            ${opt}
+          </span>
+          <input type="text" name="option_${opt.toLowerCase()}[]" required placeholder="Option ${opt}"
+            class="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="flex items-center gap-3">
+      <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Correct Answer:</label>
+      <select name="correct_answer[]" required
+        class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        <option value="A">Option A</option>
+        <option value="B">Option B</option>
+        <option value="C">Option C</option>
+        <option value="D">Option D</option>
+      </select>
+    </div>
+  `;
+
+  document.getElementById('questions-container').appendChild(block);
+  updateCount();
+  block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function removeQuestion(btn) {
+  if (confirm('Remove this question?')) {
+    btn.closest('.question-block').remove();
+    // Re-number
+    document.querySelectorAll('.question-block').forEach((b, i) => {
+      b.querySelector('span.bg-violet-500').textContent = i + 1;
+      b.querySelector('span.font-bold').lastChild.textContent = ` Question ${i + 1}`;
+    });
+    qIndex = document.querySelectorAll('.question-block').length;
+    updateCount();
+  }
+}
+
+updateCount();
+</script>
+{% endblock %}

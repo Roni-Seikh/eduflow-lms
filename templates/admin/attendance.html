@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Attendance — EduFlow LMS{% endblock %}
+{% block page_title %}Attendance Records{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <h2 class="text-xl font-bold text-slate-800 dark:text-white">Attendance Records</h2>
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="table-wrap">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-700/50">
+          <tr>
+            <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Student</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Course</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Date</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          {% for rec in records %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">{{ rec.student.name[0].upper() }}</div>
+                <div>
+                  <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ rec.student.name }}</p>
+                  <p class="text-xs text-slate-400 font-mono">{{ rec.student.student_id }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3.5 hidden md:table-cell text-slate-500 dark:text-slate-400 text-xs">{{ rec.course.title }}</td>
+            <td class="px-4 py-3.5 hidden sm:table-cell text-slate-400 text-xs">{{ rec.date.strftime('%d %b %Y') }}</td>
+            <td class="px-4 py-3.5">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold
+                {% if rec.status=='Present' %}bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400
+                {% elif rec.status=='Late' %}bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400
+                {% else %}bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full {% if rec.status=='Present' %}bg-emerald-500{% elif rec.status=='Late' %}bg-amber-500{% else %}bg-red-500{% endif %}"></span>
+                {{ rec.status }}
+              </span>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="px-5 py-12 text-center text-slate-400">No attendance records yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

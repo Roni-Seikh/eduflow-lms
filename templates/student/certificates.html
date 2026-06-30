@@ -1,0 +1,76 @@
+{% extends "student/base.html" %}
+{% block title %}My Certificates — EduFlow LMS{% endblock %}
+{% block page_title %}My Certificates{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 dark:text-white">My Certificates</h2>
+      <p class="text-sm text-slate-400 mt-0.5">{{ certificates|length }} certificate{{ 's' if certificates|length != 1 }} earned</p>
+    </div>
+    <form method="POST" action="{{ url_for('student.claim_certificates') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+      <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors">
+        <i class="fas fa-rotate"></i> Refresh Certificates
+      </button>
+    </form>
+  </div>
+
+  {% if certificates %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for cert in certificates %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:-translate-y-1 hover:shadow-md transition-all">
+      <!-- Certificate Preview -->
+      <div class="h-40 bg-gradient-to-br from-amber-400 via-orange-400 to-rose-500 flex items-center justify-center relative">
+        <div class="text-center text-white p-4">
+          <i class="fas fa-award text-5xl mb-2 opacity-80"></i>
+          <p class="text-xs font-bold uppercase tracking-widest opacity-75">Certificate of Completion</p>
+        </div>
+        <div class="absolute top-3 right-3">
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-white/20 text-white backdrop-blur">{{ cert.type }}</span>
+        </div>
+      </div>
+
+      <div class="p-5">
+        <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-1 text-sm truncate">
+          {% if cert.course %}{{ cert.course.title }}{% else %}Exam Certificate{% endif %}
+        </h3>
+        <p class="text-xs text-slate-400 mb-1">
+          <i class="fas fa-calendar mr-1"></i>Issued: {{ cert.issued_at.strftime('%d %B %Y') }}
+        </p>
+        <p class="text-xs text-slate-400 mb-4">
+          <i class="fas fa-fingerprint mr-1"></i><code class="font-mono">{{ cert.certificate_id }}</code>
+        </p>
+
+        <a href="{{ url_for('student.download_certificate', cert_id=cert.id) }}"
+          class="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+          <i class="fas fa-download"></i> Download PDF
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-20 text-center">
+    <div class="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-5">
+      <i class="fas fa-award text-amber-400 text-4xl"></i>
+    </div>
+    <h3 class="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">No Certificates Yet</h3>
+    <p class="text-slate-400 text-sm max-w-xs mx-auto mb-6">Complete courses and pass exams to earn your certificates. They'll appear here automatically.</p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="{{ url_for('student.courses') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors shadow">
+        <i class="fas fa-compass"></i> Browse Courses
+      </a>
+      <form method="POST" action="{{ url_for('student.claim_certificates') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+        <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors shadow">
+          <i class="fas fa-rotate"></i> Check for Earned Certificates
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

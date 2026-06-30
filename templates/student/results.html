@@ -1,0 +1,102 @@
+{% extends "student/base.html" %}
+{% block title %}My Results — EduFlow LMS{% endblock %}
+{% block page_title %}My Results{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Exam Results</h2>
+    <p class="text-sm text-slate-400 mt-0.5">{{ results|length }} exam{{ 's' if results|length != 1 }} attempted</p>
+  </div>
+
+  {% if results %}
+  <!-- Summary Stats -->
+  {% set passed = results|selectattr('passed','eq',true)|list|length %}
+  {% set avg = (results|sum(attribute='percentage') / results|length)|round(1) if results else 0 %}
+  <div class="grid grid-cols-3 gap-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <p class="text-2xl font-extrabold text-slate-800 dark:text-white">{{ results|length }}</p>
+      <p class="text-xs text-slate-400 mt-1">Total Attempts</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <p class="text-2xl font-extrabold text-emerald-500">{{ passed }}</p>
+      <p class="text-xs text-slate-400 mt-1">Passed</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <p class="text-2xl font-extrabold text-blue-500">{{ avg }}%</p>
+      <p class="text-xs text-slate-400 mt-1">Avg Score</p>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="table-wrap">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-700/50">
+          <tr>
+            <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Exam</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Course</th>
+            <th class="text-center px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Score</th>
+            <th class="text-center px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+            <th class="text-left px-4 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Date</th>
+            <th class="text-right px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          {% for result in results %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+                  {% if result.passed %}bg-emerald-100 dark:bg-emerald-900/30{% else %}bg-red-100 dark:bg-red-900/30{% endif %}">
+                  <i class="fas fa-{% if result.passed %}trophy{% else %}times{% endif %} text-sm
+                    {% if result.passed %}text-emerald-500{% else %}text-red-500{% endif %}"></i>
+                </div>
+                <div>
+                  <p class="font-semibold text-slate-700 dark:text-slate-200 text-sm">{{ result.exam.title }}</p>
+                  <p class="text-xs text-slate-400 sm:hidden">{{ result.exam.course.title }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-4 hidden sm:table-cell text-slate-500 dark:text-slate-400 text-xs">{{ result.exam.course.title }}</td>
+            <td class="px-4 py-4 text-center">
+              <div>
+                <p class="font-bold text-slate-700 dark:text-slate-200">{{ result.score }}/{{ result.total_marks }}</p>
+                <p class="text-xs {% if result.percentage >= 75 %}text-emerald-500{% elif result.percentage >= 50 %}text-amber-500{% else %}text-red-500{% endif %}">{{ result.percentage }}%</p>
+              </div>
+            </td>
+            <td class="px-4 py-4 text-center">
+              {% if result.passed %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
+                <i class="fas fa-check text-[10px]"></i>Passed
+              </span>
+              {% else %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                <i class="fas fa-times text-[10px]"></i>Failed
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-4 hidden md:table-cell text-slate-400 text-xs">{{ result.submitted_at.strftime('%d %b %Y') }}</td>
+            <td class="px-5 py-4 text-right">
+              <a href="{{ url_for('student.exam_result', result_id=result.id) }}" class="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-lg text-xs font-semibold hover:bg-primary-100 transition-colors">
+                Review
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-16 text-center">
+    <div class="w-14 h-14 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-chart-bar text-slate-300 text-2xl"></i>
+    </div>
+    <p class="text-slate-400 font-medium">No exam results yet.</p>
+    <p class="text-slate-400 text-sm mt-1">Attempt exams in your enrolled courses to see results here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

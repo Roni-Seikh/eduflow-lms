@@ -1,0 +1,72 @@
+{% extends "faculty/base.html" %}
+{% block title %}Exams — EduFlow LMS{% endblock %}
+{% block page_title %}Exams{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 dark:text-white">My Exams</h2>
+      <p class="text-sm text-slate-400 mt-0.5">{{ exams|length }} exam{{ 's' if exams|length != 1 }} created</p>
+    </div>
+    <a href="{{ url_for('faculty.create_exam') }}"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-semibold text-sm shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+      <i class="fas fa-plus"></i> Create Exam
+    </a>
+  </div>
+
+  {% if exams %}
+  <div class="space-y-3">
+    {% for exam in exams %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+      <div class="flex flex-col md:flex-row md:items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-file-pen text-2xl text-amber-500"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ exam.title }}</h3>
+            {% if exam.is_active %}
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">Active</span>
+            {% else %}
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">Inactive</span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-slate-400">
+            <i class="fas fa-book-open mr-1"></i>{{ exam.course.title }}
+            <span class="mx-1">·</span>
+            <i class="fas fa-list-ol mr-1"></i>{{ exam.total_questions }} questions
+            <span class="mx-1">·</span>
+            <i class="fas fa-clock mr-1"></i>{{ exam.duration_minutes }} min
+            <span class="mx-1">·</span>
+            <i class="fas fa-target mr-1"></i>Pass: {{ exam.passing_score }}%
+          </p>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <a href="{{ url_for('faculty.exam_questions', exam_id=exam.id) }}"
+            class="px-3 py-2 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 rounded-xl text-xs font-semibold hover:bg-violet-100 transition-colors">
+            <i class="fas fa-list-ol mr-1"></i>Questions
+          </a>
+          <a href="{{ url_for('faculty.exam_results', exam_id=exam.id) }}"
+            class="px-3 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-xl text-xs font-semibold hover:bg-primary-100 transition-colors">
+            <i class="fas fa-chart-bar mr-1"></i>Results
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-16 text-center">
+    <div class="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-file-pen text-amber-400 text-2xl"></i>
+    </div>
+    <p class="text-slate-500 font-medium mb-3">No exams created yet.</p>
+    <a href="{{ url_for('faculty.create_exam') }}"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors">
+      <i class="fas fa-plus"></i> Create First Exam
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

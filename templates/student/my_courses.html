@@ -1,0 +1,69 @@
+{% extends "student/base.html" %}
+{% block title %}My Courses — EduFlow LMS{% endblock %}
+{% block page_title %}My Courses{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 dark:text-white">My Enrolled Courses</h2>
+      <p class="text-sm text-slate-400 mt-0.5">{{ enrollments|length }} enrolled</p>
+    </div>
+    <a href="{{ url_for('student.courses') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors">
+      <i class="fas fa-plus"></i> Enroll More
+    </a>
+  </div>
+
+  {% if enrollments %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for e in enrollments %}
+    <a href="{{ url_for('student.course_detail', course_id=e.course_id) }}" class="block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:-translate-y-1 hover:shadow-md transition-all group">
+      <div class="h-36 bg-gradient-to-br from-emerald-400 to-teal-600 relative overflow-hidden">
+        {% if e.course.thumbnail %}
+        <img src="{{ url_for('static', filename='uploads/thumbnails/'+e.course.thumbnail) }}" class="w-full h-full object-cover">
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center">
+          <i class="fas fa-book-open text-4xl text-white/40"></i>
+        </div>
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-3">
+          <span class="text-[10px] font-bold text-white/80 bg-white/20 backdrop-blur px-2 py-0.5 rounded-full">{{ e.course.level }}</span>
+        </div>
+      </div>
+      <div class="p-4">
+        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm mb-1 line-clamp-1 group-hover:text-emerald-500 transition-colors">{{ e.course.title }}</h3>
+        <p class="text-xs text-slate-400 mb-3">{{ e.course.faculty.name }}</p>
+
+        <!-- Progress -->
+        <div class="flex items-center gap-2 mb-1">
+          <div class="flex-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full" style="width:{{ e.progress }}%"></div>
+          </div>
+          <span class="text-xs font-bold text-emerald-500 w-8 text-right">{{ e.progress }}%</span>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400 mt-2">
+          <span><i class="fas fa-calendar mr-1"></i>{{ e.enrolled_at.strftime('%d %b %Y') }}</span>
+          {% if e.is_completed %}
+          <span class="text-emerald-500 font-semibold"><i class="fas fa-check-circle mr-1"></i>Completed</span>
+          {% else %}
+          <span class="text-primary-500 font-semibold">In Progress →</span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 py-16 text-center">
+    <div class="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-book-open text-emerald-400 text-2xl"></i>
+    </div>
+    <p class="text-slate-500 font-medium mb-3">You haven't enrolled in any courses yet.</p>
+    <a href="{{ url_for('student.courses') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors">
+      <i class="fas fa-compass"></i> Browse Courses
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

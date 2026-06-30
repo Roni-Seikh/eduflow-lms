@@ -1,0 +1,102 @@
+{% extends "faculty/base.html" %}
+{% block title %}{{ action }} Course — EduFlow LMS{% endblock %}
+{% block page_title %}{{ action }} Course{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5">
+  <nav class="flex items-center gap-2 text-sm text-slate-400">
+    <a href="{{ url_for('faculty.courses') }}" class="hover:text-violet-500 transition-colors">Courses</a>
+    <i class="fas fa-chevron-right text-xs"></i>
+    <span class="text-slate-600 dark:text-slate-300">{{ action }} Course</span>
+  </nav>
+
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center">
+        <i class="fas fa-{{ 'plus' if action == 'Create' else 'pen' }} text-white"></i>
+      </div>
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">{{ action }} Course</h3>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+      <!-- Thumbnail preview -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Course Thumbnail</label>
+        <div class="flex items-center gap-4">
+          <div class="w-24 h-24 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center overflow-hidden flex-shrink-0" id="thumb-preview">
+            {% if course and course.thumbnail %}
+            <img src="{{ url_for('static', filename='uploads/thumbnails/'+course.thumbnail) }}" class="w-full h-full object-cover">
+            {% else %}
+            <i class="fas fa-image text-3xl text-white/50"></i>
+            {% endif %}
+          </div>
+          <div>
+            <input type="file" name="thumbnail" accept="image/*" onchange="previewThumb(this)"
+              class="text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-600 hover:file:bg-violet-100 dark:file:bg-violet-900/20 dark:file:text-violet-400 cursor-pointer">
+            <p class="text-xs text-slate-400 mt-1">Recommended: 800×450px, JPG or PNG</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Course Title <span class="text-red-500">*</span></label>
+        <input type="text" name="title" required value="{{ course.title if course else '' }}" placeholder="e.g. Introduction to Python Programming"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Description</label>
+        <textarea name="description" rows="4" placeholder="Describe what students will learn in this course…"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 resize-none">{{ course.description if course else '' }}</textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Duration</label>
+          <input type="text" name="duration" value="{{ course.duration if course else '' }}" placeholder="e.g. 8 weeks"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Category</label>
+          <input type="text" name="category" value="{{ course.category if course else '' }}" placeholder="e.g. Programming"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Level</label>
+          <select name="level" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+            {% for lvl in ['Beginner','Intermediate','Advanced'] %}
+            <option value="{{ lvl }}" {% if course and course.level == lvl %}selected{% endif %}>{{ lvl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <a href="{{ url_for('faculty.courses') }}" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          Cancel
+        </a>
+        <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+          <i class="fas fa-{{ 'plus' if action == 'Create' else 'floppy-disk' }} mr-1.5"></i>{{ action }} Course
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function previewThumb(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('thumb-preview');
+      preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "student/base.html" %}
+{% block title %}Exam Result — EduFlow LMS{% endblock %}
+{% block page_title %}Exam Result{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <!-- Result Hero Card -->
+  <div class="rounded-2xl p-8 text-center shadow-lg overflow-hidden relative
+    {% if result.passed %}bg-gradient-to-br from-emerald-500 to-teal-600{% else %}bg-gradient-to-br from-red-500 to-rose-600{% endif %}">
+    <div class="relative z-10">
+      <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center
+        {% if result.passed %}bg-white/20{% else %}bg-white/10{% endif %} backdrop-blur">
+        <i class="fas fa-{% if result.passed %}trophy{% else %}times-circle{% endif %} text-4xl text-white"></i>
+      </div>
+      <h1 class="text-3xl font-extrabold text-white mb-2">
+        {% if result.passed %}Congratulations! 🎉{% else %}Better Luck Next Time{% endif %}
+      </h1>
+      <p class="text-white/80 text-lg mb-6">{{ exam.title }}</p>
+
+      <div class="grid grid-cols-3 gap-4 max-w-sm mx-auto">
+        <div class="bg-white/15 backdrop-blur rounded-xl p-3">
+          <p class="text-3xl font-extrabold text-white">{{ result.percentage|int }}%</p>
+          <p class="text-white/70 text-xs mt-0.5">Score</p>
+        </div>
+        <div class="bg-white/15 backdrop-blur rounded-xl p-3">
+          <p class="text-3xl font-extrabold text-white">{{ result.score }}</p>
+          <p class="text-white/70 text-xs mt-0.5">Marks</p>
+        </div>
+        <div class="bg-white/15 backdrop-blur rounded-xl p-3">
+          <p class="text-3xl font-extrabold text-white">{{ result.total_marks }}</p>
+          <p class="text-white/70 text-xs mt-0.5">Total</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breakdown Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <i class="fas fa-check-circle text-2xl text-emerald-500 mb-2"></i>
+      <p class="text-xl font-extrabold text-slate-700 dark:text-slate-200">{{ result.score }}</p>
+      <p class="text-xs text-slate-400">Correct</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <i class="fas fa-times-circle text-2xl text-red-500 mb-2"></i>
+      <p class="text-xl font-extrabold text-slate-700 dark:text-slate-200">{{ result.total_marks - result.score }}</p>
+      <p class="text-xs text-slate-400">Wrong</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <i class="fas fa-clock text-2xl text-amber-500 mb-2"></i>
+      <p class="text-xl font-extrabold text-slate-700 dark:text-slate-200">{{ (result.time_taken // 60) }}m</p>
+      <p class="text-xs text-slate-400">Time Taken</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+      <i class="fas fa-target text-2xl text-blue-500 mb-2"></i>
+      <p class="text-xl font-extrabold text-slate-700 dark:text-slate-200">{{ exam.passing_score }}%</p>
+      <p class="text-xs text-slate-400">Passing Score</p>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex flex-col sm:flex-row gap-3">
+    {% if result.passed %}
+    <form method="POST" action="{{ url_for('student.claim_certificates') }}" class="flex-1">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+      <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+        <i class="fas fa-award mr-2"></i>Get My Certificate
+      </button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('student.dashboard') }}" class="flex-1 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold text-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+      <i class="fas fa-gauge-high mr-2"></i>Dashboard
+    </a>
+    <a href="{{ url_for('student.certificates') }}" class="flex-1 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold text-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+      <i class="fas fa-certificate mr-2"></i>Certificates
+    </a>
+  </div>
+
+  <!-- Answer Review -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Answer Review</h3>
+      <p class="text-xs text-slate-400 mt-0.5">Review your answers and see correct solutions</p>
+    </div>
+    <div class="divide-y divide-slate-100 dark:divide-slate-700">
+      {% for q in questions %}
+      {% set user_ans = result.answers.get(q.id|string, '') if result.answers else '' %}
+      {% set is_correct = user_ans == q.correct_answer %}
+      <div class="p-5">
+        <div class="flex items-start gap-3 mb-3">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5
+            {% if is_correct %}bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30{% else %}bg-red-100 text-red-600 dark:bg-red-900/30{% endif %}">
+            {% if is_correct %}<i class="fas fa-check text-xs"></i>{% else %}<i class="fas fa-times text-xs"></i>{% endif %}
+          </span>
+          <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ q.question }}</p>
+        </div>
+        <div class="pl-9 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {% for opt_key, opt_val in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm
+            {% if opt_key == q.correct_answer %}bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700
+            {% elif opt_key == user_ans and user_ans != q.correct_answer %}bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700
+            {% else %}bg-slate-50 dark:bg-slate-700/50 border border-transparent{% endif %}">
+            <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+              {% if opt_key == q.correct_answer %}bg-emerald-500 text-white
+              {% elif opt_key == user_ans and user_ans != q.correct_answer %}bg-red-500 text-white
+              {% else %}bg-slate-200 dark:bg-slate-600 text-slate-500{% endif %}">
+              {{ opt_key }}
+            </span>
+            <span class="text-slate-600 dark:text-slate-300 text-xs">{{ opt_val }}</span>
+            {% if opt_key == q.correct_answer %}<i class="fas fa-check text-xs text-emerald-500 ml-auto"></i>{% endif %}
+            {% if opt_key == user_ans and user_ans != q.correct_answer %}<i class="fas fa-times text-xs text-red-500 ml-auto"></i>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% if not user_ans %}
+        <p class="pl-9 mt-2 text-xs text-amber-600 dark:text-amber-400"><i class="fas fa-minus-circle mr-1"></i>Not answered</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

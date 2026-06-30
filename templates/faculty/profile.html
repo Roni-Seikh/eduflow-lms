@@ -1,0 +1,72 @@
+{% extends "faculty/base.html" %}
+{% block title %}My Profile — EduFlow LMS{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5">
+  <!-- Profile Card -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="h-28 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
+    <div class="px-6 pb-6">
+      <div class="-mt-12 mb-4 flex items-end justify-between">
+        <div class="w-24 h-24 rounded-2xl border-4 border-white dark:border-slate-800 overflow-hidden bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-lg">
+          {% if current_user.profile_image %}
+          <img src="{{ url_for('static', filename='uploads/profiles/'+current_user.profile_image) }}" class="w-full h-full object-cover">
+          {% else %}
+          <span class="text-3xl font-extrabold text-white">{{ current_user.name[0].upper() }}</span>
+          {% endif %}
+        </div>
+        <code class="text-xs bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 px-3 py-1.5 rounded-full font-mono font-semibold border border-violet-200 dark:border-violet-700 mb-1">
+          {{ current_user.faculty_id }}
+        </code>
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-800 dark:text-white">{{ current_user.name }}</h2>
+      <p class="text-slate-400 text-sm mt-0.5">{{ current_user.email }}</p>
+      <div class="flex flex-wrap gap-3 mt-2 text-xs text-slate-400">
+        {% if current_user.department %}<span><i class="fas fa-building-columns mr-1"></i>{{ current_user.department }}</span>{% endif %}
+        {% if current_user.qualification %}<span><i class="fas fa-graduation-cap mr-1"></i>{{ current_user.qualification }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+      <h3 class="font-bold text-slate-700 dark:text-slate-200">Update Profile</h3>
+    </div>
+    <form method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Profile Photo</label>
+        <input type="file" name="profile_image" accept="image/*"
+          class="text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-600 hover:file:bg-violet-100 dark:file:bg-violet-900/20 dark:file:text-violet-400 cursor-pointer">
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Phone</label>
+          <input type="tel" name="phone" value="{{ current_user.phone or '' }}" placeholder="+91 00000 00000"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Qualification</label>
+          <input type="text" name="qualification" value="{{ current_user.qualification or '' }}" placeholder="e.g. M.Tech, PhD"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Specialization</label>
+          <input type="text" name="specialization" value="{{ current_user.specialization or '' }}" placeholder="e.g. Machine Learning, Web Development"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 hover:-translate-y-0.5 transition-all">
+          <i class="fas fa-floppy-disk mr-1.5"></i>Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

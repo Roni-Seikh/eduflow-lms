@@ -1,0 +1,103 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ action }} Faculty — EduFlow LMS{% endblock %}
+{% block page_title %}{{ action }} Faculty{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5">
+  <nav class="flex items-center gap-2 text-sm text-slate-400">
+    <a href="{{ url_for('admin.faculty_list') }}" class="hover:text-violet-500 transition-colors">Faculty</a>
+    <i class="fas fa-chevron-right text-xs"></i>
+    <span class="text-slate-600 dark:text-slate-300">{{ action }} Faculty</span>
+  </nav>
+
+  <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-4">
+      <div class="w-11 h-11 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center shadow">
+        <i class="fas fa-{{ 'user-plus' if action == 'Add' else 'user-pen' }} text-white"></i>
+      </div>
+      <div>
+        <h2 class="font-bold text-slate-700 dark:text-slate-200">{{ action }} Faculty Member</h2>
+        {% if faculty %}<p class="text-xs text-slate-400">ID: <code class="font-mono">{{ faculty.faculty_id }}</code></p>{% endif %}
+      </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+      <!-- Profile Image -->
+      <div class="flex items-center gap-6">
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 overflow-hidden" id="avatar-preview">
+          {% if faculty and faculty.profile_image %}
+          <img src="{{ url_for('static', filename='uploads/profiles/'+faculty.profile_image) }}" class="w-full h-full object-cover">
+          {% else %}<i class="fas fa-user"></i>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Profile Photo</label>
+          <input type="file" name="profile_image" accept="image/*" onchange="previewImage(this)"
+            class="text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-600 hover:file:bg-violet-100 dark:file:bg-violet-900/20 dark:file:text-violet-400 cursor-pointer">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Full Name <span class="text-red-500">*</span></label>
+          <input type="text" name="name" required value="{{ faculty.name if faculty else '' }}" placeholder="Full name"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email <span class="text-red-500">*</span></label>
+          <input type="email" name="email" required value="{{ faculty.email if faculty else '' }}" placeholder="email@domain.com" {% if faculty %}readonly class="opacity-60"{% endif %}
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Phone</label>
+          <input type="tel" name="phone" value="{{ faculty.phone if faculty else '' }}" placeholder="+91 00000 00000"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Department</label>
+          <input type="text" name="department" value="{{ faculty.department if faculty else '' }}" placeholder="e.g. Computer Science"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Qualification</label>
+          <input type="text" name="qualification" value="{{ faculty.qualification if faculty else '' }}" placeholder="e.g. M.Tech, PhD"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Specialization</label>
+          <input type="text" name="specialization" value="{{ faculty.specialization if faculty else '' }}" placeholder="e.g. Machine Learning"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+        </div>
+        {% if action == 'Edit' %}
+        <div class="flex items-center gap-3 mt-2">
+          <input type="checkbox" name="is_active" id="is_active" {% if faculty and faculty.is_active %}checked{% endif %} class="w-4 h-4 rounded accent-violet-500">
+          <label for="is_active" class="text-sm text-slate-600 dark:text-slate-300">Active account</label>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Password -->
+      <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 space-y-4">
+        <h4 class="font-semibold text-sm text-slate-700 dark:text-slate-200 flex items-center gap-2">
+          <i class="fas fa-lock text-slate-400"></i>
+          {% if action == 'Add' %}Set Password{% else %}Change Password (optional){% endif %}
+        </h4>
+        <input type="password" name="password" {% if action == 'Add' %}required{% endif %} placeholder="{% if action == 'Add' %}Create password{% else %}New password{% endif %}"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+      </div>
+
+      <div class="flex items-center justify-end gap-3">
+        <a href="{{ url_for('admin.faculty_list') }}" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancel</a>
+        <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl text-sm font-semibold shadow hover:opacity-90 transition-all">
+          <i class="fas fa-{{ 'user-plus' if action == 'Add' else 'floppy-disk' }} mr-1.5"></i>{{ action }} Faculty
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>function previewImage(input){if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{document.getElementById('avatar-preview').innerHTML=`<img src="${e.target.result}" class="w-full h-full object-cover">`;};r.readAsDataURL(input.files[0]);}}</script>
+{% endblock %}
